@@ -1,0 +1,68 @@
+name: Release
+
+# Builds the standalone Windows app and attaches it to a GitHub Release.
+# Triggered when you push a version tag, e.g.:
+#
+#     git tag v1.0.0
+#     git push origin v1.0.0
+#
+# The result is a zip on the Releases page that users can download and run —
+# no Python required. The binary is NOT code-signed, so Windows SmartScreen may
+# warn on first run; see the README's "Is the download safe?" section.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create the release and upload assets
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Run tests before building
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m unittest discover -s tests -v
+
+      - name: Build standalone executable
+        run: python build.py
+
+      - name: Zip the build
+        shell: pwsh
+        run: Compress-Archive -Path dist/Reclaim/* -DestinationPath "Reclaim-${{ github.ref_name }}-windows.zip"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Reclaim-${{ github.ref_name }}-windows.zip
+          generate_release_notes: true
+          body: |
+            ## Reclaim ${{ github.ref_name }}
+
+            **Download:** `Reclaim-${{ github.ref_name }}-windows.zip` below.
+            Unzip anywhere and run `Reclaim.exe`. No installation, no Python needed.
+
+            > This build is not code-signed yet, so Windows SmartScreen may show
+            > an "unknown publisher" warning on first launch. Click **More info →
+            > Run anyway**. The full source is in this repo and the binary is built
+            > by GitHub Actions from that source — see the build log for this tag.
+
+            If this tool saved you some disk space, tips are welcome via the
+            **Sponsor** button. ☕

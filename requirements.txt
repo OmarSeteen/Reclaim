@@ -1,0 +1,6 @@
+# Runtime dependency for the PySide6 desktop UI.
+PySide6>=6.6
+
+# Optional: vector icons. The UI guards the import and degrades to text/no-icon
+# if it's missing, so this is not required to run.
+# qtawesome>=1.3

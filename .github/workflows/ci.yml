@@ -1,0 +1,46 @@
+name: CI
+
+# Run the full test suite on every push and pull request.
+# Tests are headless (no network, no secrets); the GUI smoke test runs Qt
+# offscreen via QT_QPA_PLATFORM. We test on Windows because the tool targets
+# Windows (winapi / locations resolve real Windows paths).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile-check every module
+        # compileall recurses the package (covers Reclaim/ui/ too) and needs no
+        # shell glob expansion, which the Windows runner's PowerShell doesn't do.
+        run: python -m compileall Reclaim
+
+      - name: Layering check (package import loads no GUI toolkit)
+        run: python -c "import sys, Reclaim; assert not ({'PySide6','tkinter'} & set(sys.modules)), 'GUI toolkit leaked into package import'"
+
+      - name: Run unit tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m unittest discover -s tests -v
