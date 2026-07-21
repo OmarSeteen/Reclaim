@@ -11,7 +11,13 @@ their controls in the normal header — `FRAMELESS` is the switch for that.
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog, QHBoxLayout, QLabel, QPushButton, QSizeGrip, QVBoxLayout, QWidget,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizeGrip,
+    QVBoxLayout,
+    QWidget,
 )
 
 from .. import config
@@ -40,8 +46,7 @@ class TitleBar(QWidget):
     """Draggable title bar: app/dialog name, optional extra controls, and window
     buttons. `minmax=False` gives a dialog just a close button."""
 
-    def __init__(self, window, title, subtitle=None, minmax=True, extra=(),
-                 logo=False):
+    def __init__(self, window, title, subtitle=None, minmax=True, extra=(), logo=False):
         super().__init__(window)
         self.setObjectName("TitleBar")
         self._win = window
@@ -77,7 +82,7 @@ class TitleBar(QWidget):
             # right edge under RTL). More balanced than pinning the logo to the
             # first line, and the tagline now lines up under the name on its own
             # rather than sitting alone in the window corner.
-            self._title_label.setObjectName("BrandName")     # gold accent in QSS
+            self._title_label.setObjectName("BrandName")  # gold accent in QSS
             # "Reclaim" is Latin, so Qt left-aligns it by default even under RTL.
             # Force it (and the tagline) to the trailing right edge so the name
             # sits directly above the start of the Arabic tagline ("حلّل").
@@ -99,7 +104,7 @@ class TitleBar(QWidget):
             brand.addLayout(name_row)
         elif self._logo_label is not None:
             # LTR with logo: logo inline beside the name on the first line.
-            self._title_label.setObjectName("BrandName")     # gold accent in QSS
+            self._title_label.setObjectName("BrandName")  # gold accent in QSS
             name_row = QHBoxLayout()
             name_row.setContentsMargins(0, 0, 0, 0)
             name_row.setSpacing(tokens.SP_2)
@@ -115,11 +120,12 @@ class TitleBar(QWidget):
                 brand.addWidget(sub)
         row.addLayout(brand)
         row.addStretch(1)
-        for w in extra:                       # e.g. Theme / language / Settings
+        for w in extra:  # e.g. Theme / language / Settings
             row.addWidget(w, 0, Qt.AlignTop)
         if minmax:
-            row.addWidget(self._button(_MIN, window.showMinimized, "WinBtn"),
-                          0, Qt.AlignTop)
+            row.addWidget(
+                self._button(_MIN, window.showMinimized, "WinBtn"), 0, Qt.AlignTop
+            )
             self._max_btn = self._button(_MAX, self._toggle_max, "WinBtn")
             row.addWidget(self._max_btn, 0, Qt.AlignTop)
         row.addWidget(self._button(_CLOSE, window.close, "WinClose"), 0, Qt.AlignTop)
@@ -127,7 +133,7 @@ class TitleBar(QWidget):
     def _button(self, glyph, slot, name):
         btn = QPushButton(glyph, self)
         btn.setObjectName(name)
-        btn.setFocusPolicy(Qt.NoFocus)        # buttons shouldn't grab keyboard focus
+        btn.setFocusPolicy(Qt.NoFocus)  # buttons shouldn't grab keyboard focus
         btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(slot)
         return btn
@@ -178,7 +184,7 @@ def frameless_dialog(parent, title):
     if FRAMELESS:
         outer.addWidget(TitleBar(dlg, title, minmax=False))
     body = QWidget()
-    body.setObjectName("Page")          # carries the themed page background
+    body.setObjectName("Page")  # carries the themed page background
     content = QVBoxLayout(body)
     content.setContentsMargins(tokens.SP_4, tokens.SP_3, tokens.SP_4, tokens.SP_4)
     outer.addWidget(body, 1)

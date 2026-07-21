@@ -18,15 +18,14 @@ import sys
 # display and keeps this runnable in CI / over SSH.
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QBuffer, Qt                      # noqa: E402
-from PySide6.QtGui import QGuiApplication, QImage           # noqa: E402
+from PySide6.QtCore import QBuffer, Qt  # noqa: E402
+from PySide6.QtGui import QGuiApplication, QImage  # noqa: E402
 
 # Standard Windows icon sizes. 16/24/32/48 cover the taskbar, alt-tab and small
 # list views; 64/128/256 cover the larger "big icons" / file-explorer views.
 SIZES = (16, 24, 32, 48, 64, 128, 256)
 
-_ASSETS = os.path.join(os.path.dirname(__file__), "..",
-                       "Reclaim", "ui", "assets")
+_ASSETS = os.path.join(os.path.dirname(__file__), "..", "Reclaim", "ui", "assets")
 MASTER = os.path.join(_ASSETS, "icon_master_512.png")
 OUT = os.path.join(_ASSETS, "app_icon.ico")
 
@@ -34,7 +33,7 @@ OUT = os.path.join(_ASSETS, "app_icon.ico")
 def _png_bytes(image, size):
     """Smoothly scale `image` to size×size and return its PNG-encoded bytes."""
     scaled = image.scaled(size, size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-    buf = QBuffer()                 # owns its own backing store (no dangling ref)
+    buf = QBuffer()  # owns its own backing store (no dangling ref)
     buf.open(QBuffer.WriteOnly)
     scaled.save(buf, "PNG")
     return bytes(buf.data())
@@ -49,22 +48,25 @@ def build_ico(master_path, out_path, sizes=SIZES):
 
     # ICO layout: 6-byte header, then one 16-byte dir entry per image, then the
     # image payloads. Offsets are measured from the start of the file.
-    header = struct.pack("<HHH", 0, 1, len(pngs))    # reserved, type=1 (icon), count
+    header = struct.pack("<HHH", 0, 1, len(pngs))  # reserved, type=1 (icon), count
     offset = len(header) + 16 * len(pngs)
     entries, payloads = [], []
     for size, data in pngs:
         # Width/height of 256 are stored as 0 in the byte-wide fields.
         dim = 0 if size >= 256 else size
-        entries.append(struct.pack(
-            "<BBBBHHII",
-            dim, dim,         # width, height
-            0,                # palette count (0 = no palette)
-            0,                # reserved
-            1,                # color planes
-            32,               # bits per pixel
-            len(data),        # bytes of image data
-            offset,           # offset to image data
-        ))
+        entries.append(
+            struct.pack(
+                "<BBBBHHII",
+                dim,
+                dim,  # width, height
+                0,  # palette count (0 = no palette)
+                0,  # reserved
+                1,  # color planes
+                32,  # bits per pixel
+                len(data),  # bytes of image data
+                offset,  # offset to image data
+            )
+        )
         payloads.append(data)
         offset += len(data)
 

@@ -18,11 +18,12 @@ from ..fsutils import Cancelled
 
 class WorkerSignals(QObject):
     """Cross-thread signals for one job. Qt marshals these to the UI thread."""
-    result = Signal(object)      # the job's return value
-    error = Signal(str)          # an unexpected failure (message)
-    cancelled = Signal()         # the user stopped it (clean, not an error)
-    finished = Signal()          # always emitted last, success or not
-    progress = Signal(object)    # forwarded from the job's on_progress
+
+    result = Signal(object)  # the job's return value
+    error = Signal(str)  # an unexpected failure (message)
+    cancelled = Signal()  # the user stopped it (clean, not an error)
+    finished = Signal()  # always emitted last, success or not
+    progress = Signal(object)  # forwarded from the job's on_progress
 
 
 # Keeps live workers referenced until they finish. Without this the Python
@@ -58,7 +59,7 @@ class Worker(QRunnable):
             result = self.job()
         except Cancelled:
             self._emit(self.signals.cancelled)
-        except Exception as exc:        # a worker crash must never kill the app
+        except Exception as exc:  # a worker crash must never kill the app
             self._emit(self.signals.error, str(exc))
         else:
             self._emit(self.signals.result, result)
@@ -66,8 +67,15 @@ class Worker(QRunnable):
             self._emit(self.signals.finished)
 
 
-def submit(pool, make_job, on_result=None, on_error=None,
-           on_cancelled=None, on_finished=None, on_progress=None):
+def submit(
+    pool,
+    make_job,
+    on_result=None,
+    on_error=None,
+    on_cancelled=None,
+    on_finished=None,
+    on_progress=None,
+):
     """Start `make_job(progress_emit)` on the pool and wire its callbacks.
 
     `make_job` is a factory that receives a thread-safe `progress_emit` callable
@@ -79,8 +87,10 @@ def submit(pool, make_job, on_result=None, on_error=None,
     worker = Worker()
     s = worker.signals
     for signal, callback in (
-        (s.result, on_result), (s.error, on_error),
-        (s.cancelled, on_cancelled), (s.finished, on_finished),
+        (s.result, on_result),
+        (s.error, on_error),
+        (s.cancelled, on_cancelled),
+        (s.finished, on_finished),
         (s.progress, on_progress),
     ):
         if callback is not None:
@@ -90,7 +100,7 @@ def submit(pool, make_job, on_result=None, on_error=None,
     _alive.add(worker)
     s.finished.connect(lambda: _alive.discard(worker))
 
-    def progress(*args):    # guarded like Worker._emit, for use inside the job
+    def progress(*args):  # guarded like Worker._emit, for use inside the job
         try:
             s.progress.emit(*args)
         except RuntimeError:

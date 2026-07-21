@@ -26,7 +26,7 @@ def normalize_excludes(excluded):
     normalisation once up front keeps the per-file check in a deep walk cheap.
     """
     out = []
-    for p in (excluded or ()):
+    for p in excluded or ():
         try:
             out.append(os.path.normcase(os.path.abspath(p)))
         except (OSError, ValueError):
@@ -118,8 +118,7 @@ def is_reparse_dir(entry):
     try:
         if entry.is_symlink():
             return True
-        attrs = getattr(entry.stat(follow_symlinks=False),
-                        "st_file_attributes", 0)
+        attrs = getattr(entry.stat(follow_symlinks=False), "st_file_attributes", 0)
         return bool(attrs & _FILE_ATTRIBUTE_REPARSE_POINT)
     except OSError:
         return False

@@ -26,12 +26,15 @@ def main():
 
     # Fail loudly with a fix if the build tools aren't installed — otherwise the
     # subprocess just errors and it's easy to miss why no output appeared.
-    missing = [m for m in ("PyInstaller", "PySide6")
-               if importlib.util.find_spec(m) is None]
+    missing = [
+        m for m in ("PyInstaller", "PySide6") if importlib.util.find_spec(m) is None
+    ]
     if missing:
         print("Cannot build — missing package(s):", ", ".join(missing))
-        print(f"Install them first:\n    {sys.executable} -m pip install "
-              + " ".join(m.lower() if m == "PyInstaller" else m for m in missing))
+        print(
+            f"Install them first:\n    {sys.executable} -m pip install "
+            + " ".join(m.lower() if m == "PyInstaller" else m for m in missing)
+        )
         raise SystemExit(1)
 
     # Entry is the top-level launcher, NOT Reclaim/__main__.py: PyInstaller
@@ -47,28 +50,53 @@ def main():
     # bundle. `--collect-submodules Reclaim` pulls the whole app package
     # (incl. ui/), again because those imports are lazy.
     qt_excludes = [
-        "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets",
-        "PySide6.QtWebEngineQuick", "PySide6.QtQuick", "PySide6.QtQuick3D",
-        "PySide6.QtQml", "PySide6.Qt3DCore", "PySide6.QtMultimedia",
-        "PySide6.QtMultimediaWidgets", "PySide6.QtCharts",
-        "PySide6.QtDataVisualization", "PySide6.QtPdf", "PySide6.QtPdfWidgets",
-        "PySide6.QtDesigner", "PySide6.QtBluetooth", "PySide6.QtPositioning",
-        "PySide6.QtSensors", "PySide6.QtSerialPort", "PySide6.QtSql",
-        "PySide6.QtTest", "PySide6.QtNetworkAuth", "PySide6.QtWebChannel",
-        "PySide6.QtWebSockets", "PySide6.QtSpatialAudio", "PySide6.QtScxml",
-        "PySide6.QtNfc", "PySide6.QtRemoteObjects", "PySide6.QtHelp",
-        "tkinter",   # the app's UI is PySide6; tkinter is never imported
+        "PySide6.QtWebEngineCore",
+        "PySide6.QtWebEngineWidgets",
+        "PySide6.QtWebEngineQuick",
+        "PySide6.QtQuick",
+        "PySide6.QtQuick3D",
+        "PySide6.QtQml",
+        "PySide6.Qt3DCore",
+        "PySide6.QtMultimedia",
+        "PySide6.QtMultimediaWidgets",
+        "PySide6.QtCharts",
+        "PySide6.QtDataVisualization",
+        "PySide6.QtPdf",
+        "PySide6.QtPdfWidgets",
+        "PySide6.QtDesigner",
+        "PySide6.QtBluetooth",
+        "PySide6.QtPositioning",
+        "PySide6.QtSensors",
+        "PySide6.QtSerialPort",
+        "PySide6.QtSql",
+        "PySide6.QtTest",
+        "PySide6.QtNetworkAuth",
+        "PySide6.QtWebChannel",
+        "PySide6.QtWebSockets",
+        "PySide6.QtSpatialAudio",
+        "PySide6.QtScxml",
+        "PySide6.QtNfc",
+        "PySide6.QtRemoteObjects",
+        "PySide6.QtHelp",
+        "tkinter",  # the app's UI is PySide6; tkinter is never imported
     ]
     cmd = [
-        sys.executable, "-m", "PyInstaller",
-        "--onedir",             # run-in-place folder; no %TEMP% extraction
-        "--windowed",           # no console window for a GUI app
-        "--noconfirm",          # overwrite a previous build without prompting
-        "--name", "Reclaim",
-        "--hidden-import", "PySide6.QtCore",
-        "--hidden-import", "PySide6.QtGui",
-        "--hidden-import", "PySide6.QtWidgets",
-        "--collect-submodules", "Reclaim",
+        sys.executable,
+        "-m",
+        "PyInstaller",
+        "--onedir",  # run-in-place folder; no %TEMP% extraction
+        "--windowed",  # no console window for a GUI app
+        "--noconfirm",  # overwrite a previous build without prompting
+        "--name",
+        "Reclaim",
+        "--hidden-import",
+        "PySide6.QtCore",
+        "--hidden-import",
+        "PySide6.QtGui",
+        "--hidden-import",
+        "PySide6.QtWidgets",
+        "--collect-submodules",
+        "Reclaim",
     ]
     # The .exe's file icon (Explorer, and the taskbar when pinned but not
     # running). The window/taskbar icon while running is set separately at
@@ -94,8 +122,7 @@ def main():
     # regardless of where the user invoked it from.
     code = subprocess.call(cmd, cwd=here)
     if code == 0:
-        print("\nBuilt:", os.path.join(here, "dist", "Reclaim",
-                                       "Reclaim.exe"))
+        print("\nBuilt:", os.path.join(here, "dist", "Reclaim", "Reclaim.exe"))
         print("Zip the dist/Reclaim/ folder to distribute it.")
     raise SystemExit(code)
 

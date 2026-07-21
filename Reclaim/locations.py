@@ -60,7 +60,10 @@ _CHROMIUM_ROOTS = [
     ("Microsoft", "Edge", "User Data"),
     ("BraveSoftware", "Brave-Browser", "User Data"),
     ("Vivaldi", "User Data"),
-    ("Opera Software", "Opera Stable"),     # Opera keeps profiles flat, not under User Data
+    (
+        "Opera Software",
+        "Opera Stable",
+    ),  # Opera keeps profiles flat, not under User Data
     ("Opera Software", "Opera GX Stable"),
     ("Chromium", "User Data"),
 ]
@@ -84,7 +87,9 @@ def browser_cache_dirs():
                 os.path.join(base, "GPUCache"),
             ]
         paths.append(
-            os.path.join(config.LOCALAPPDATA, "Mozilla", "Firefox", "Profiles", "*", "cache2")
+            os.path.join(
+                config.LOCALAPPDATA, "Mozilla", "Firefox", "Profiles", "*", "cache2"
+            )
         )
     return _existing_dirs(paths)
 
@@ -113,11 +118,18 @@ def app_cache_dirs():
     if config.LOCALAPPDATA:
         paths += [
             os.path.join(config.LOCALAPPDATA, "Spotify", "Storage"),
-            os.path.join(config.LOCALAPPDATA, "Packages", "MSTeams_*", "LocalCache",
-                         "Microsoft", "MSTeams"),
+            os.path.join(
+                config.LOCALAPPDATA,
+                "Packages",
+                "MSTeams_*",
+                "LocalCache",
+                "Microsoft",
+                "MSTeams",
+            ),
             os.path.join(config.LOCALAPPDATA, "Zoom", "bin", "Cache"),
-            os.path.join(config.LOCALAPPDATA, "Packages",
-                         "*WhatsAppDesktop*", "LocalCache"),
+            os.path.join(
+                config.LOCALAPPDATA, "Packages", "*WhatsAppDesktop*", "LocalCache"
+            ),
         ]
     return _existing_dirs(paths)
 
@@ -127,23 +139,23 @@ def app_cache_dirs():
 # costs a re-fetch on next build — never source or config. Listed as (env-base,
 # *sub-parts); env-base is "USER", "LOCAL", or "APPDATA" and resolves below.
 _DEV_CACHE_SPECS = [
-    ("LOCAL", "npm-cache"),                        # npm
-    ("APPDATA", "npm-cache"),                       # npm (older location)
-    ("LOCAL", "Yarn", "Cache"),                     # Yarn classic
-    ("LOCAL", "pnpm", "store"),                      # pnpm content-addressable store
-    ("LOCAL", "pip", "Cache"),                       # pip wheel/http cache
-    ("USER", ".gradle", "caches"),                  # Gradle
-    ("USER", ".m2", "repository"),                   # Maven
-    ("USER", ".nuget", "packages"),                  # NuGet global packages
-    ("LOCAL", "NuGet", "v3-cache"),                  # NuGet http cache
-    ("USER", ".cargo", "registry", "cache"),         # Rust/Cargo
+    ("LOCAL", "npm-cache"),  # npm
+    ("APPDATA", "npm-cache"),  # npm (older location)
+    ("LOCAL", "Yarn", "Cache"),  # Yarn classic
+    ("LOCAL", "pnpm", "store"),  # pnpm content-addressable store
+    ("LOCAL", "pip", "Cache"),  # pip wheel/http cache
+    ("USER", ".gradle", "caches"),  # Gradle
+    ("USER", ".m2", "repository"),  # Maven
+    ("USER", ".nuget", "packages"),  # NuGet global packages
+    ("LOCAL", "NuGet", "v3-cache"),  # NuGet http cache
+    ("USER", ".cargo", "registry", "cache"),  # Rust/Cargo
     ("USER", "go", "pkg", "mod", "cache", "download"),  # Go modules
     ("USER", "AppData", "Local", "Microsoft", "vscode-cpptools"),  # VS Code C++ tools
-    ("APPDATA", "Code", "Cache"),                    # VS Code disk cache
-    ("APPDATA", "Code", "CachedData"),               # VS Code compiled bytecode
+    ("APPDATA", "Code", "Cache"),  # VS Code disk cache
+    ("APPDATA", "Code", "CachedData"),  # VS Code compiled bytecode
     ("APPDATA", "Code", "Code Cache"),
     ("APPDATA", "Code", "GPUCache"),
-    ("LOCAL", "JetBrains", "*", "caches"),           # JetBrains IDE caches
+    ("LOCAL", "JetBrains", "*", "caches"),  # JetBrains IDE caches
 ]
 
 
@@ -177,8 +189,17 @@ def windows_update_dirs():
 def delivery_optimization_dirs():
     """Peer-to-peer update-sharing cache. Rebuilds automatically; needs admin."""
     paths = [
-        os.path.join(config.WINDIR, "ServiceProfiles", "NetworkService", "AppData",
-                     "Local", "Microsoft", "Windows", "DeliveryOptimization", "Cache"),
+        os.path.join(
+            config.WINDIR,
+            "ServiceProfiles",
+            "NetworkService",
+            "AppData",
+            "Local",
+            "Microsoft",
+            "Windows",
+            "DeliveryOptimization",
+            "Cache",
+        ),
         os.path.join(config.WINDIR, "SoftwareDistribution", "DeliveryOptimization"),
     ]
     return _existing_dirs(paths)
@@ -191,14 +212,20 @@ def wer_dirs():
     so both are included and whatever is locked simply gets skipped at clean time.
     """
     paths = [
-        os.path.join(config.PROGRAMDATA, "Microsoft", "Windows", "WER", "ReportArchive"),
+        os.path.join(
+            config.PROGRAMDATA, "Microsoft", "Windows", "WER", "ReportArchive"
+        ),
         os.path.join(config.PROGRAMDATA, "Microsoft", "Windows", "WER", "ReportQueue"),
         os.path.join(config.PROGRAMDATA, "Microsoft", "Windows", "WER", "Temp"),
     ]
     if config.LOCALAPPDATA:
         paths += [
-            os.path.join(config.LOCALAPPDATA, "Microsoft", "Windows", "WER", "ReportArchive"),
-            os.path.join(config.LOCALAPPDATA, "Microsoft", "Windows", "WER", "ReportQueue"),
+            os.path.join(
+                config.LOCALAPPDATA, "Microsoft", "Windows", "WER", "ReportArchive"
+            ),
+            os.path.join(
+                config.LOCALAPPDATA, "Microsoft", "Windows", "WER", "ReportQueue"
+            ),
             os.path.join(config.LOCALAPPDATA, "CrashDumps"),
         ]
     return _existing_dirs(paths)
@@ -259,9 +286,8 @@ def thumbnail_cache_files():
     base = os.path.join(config.LOCALAPPDATA, "Microsoft", "Windows", "Explorer")
     if not os.path.isdir(base):
         return []
-    return (
-        glob.glob(os.path.join(base, "thumbcache_*.db"))
-        + glob.glob(os.path.join(base, "iconcache_*.db"))
+    return glob.glob(os.path.join(base, "thumbcache_*.db")) + glob.glob(
+        os.path.join(base, "iconcache_*.db")
     )
 
 

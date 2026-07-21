@@ -11,14 +11,19 @@ import os
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QFrame, QLabel, QPushButton, QStackedWidget, QVBoxLayout, QWidget,
+    QFrame,
+    QLabel,
+    QPushButton,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from . import theme, tokens
 
-try:                       # optional dependency — guarded
+try:  # optional dependency — guarded
     import qtawesome as qta
-except Exception:          # pragma: no cover - environment dependent
+except Exception:  # pragma: no cover - environment dependent
     qta = None
 
 # The brand logo is an *optional* drop-in, exactly like the bundled fonts: if no
@@ -30,12 +35,23 @@ _ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 # For the title-bar brand: an SVG (crisp at any DPI) or the largest raster we
 # have, since it's smoothly downscaled to ~28px. A .ico isn't used here — its
 # tiny embedded sizes would look soft scaled to the brand height.
-_LOGO_NAMES = ("logo.svg", "logo.png", "icon_master_512.png",
-               "icon_256x256.png", "icon_64x64.png")
+_LOGO_NAMES = (
+    "logo.svg",
+    "logo.png",
+    "icon_master_512.png",
+    "icon_256x256.png",
+    "icon_64x64.png",
+)
 # For the window/taskbar icon: a multi-resolution .ico is ideal on Windows
 # (Qt picks the right embedded size); otherwise an SVG / largest raster.
-_ICON_NAMES = ("app_icon.ico", "logo.svg", "logo.png",
-               "icon_256x256.png", "icon_64x64.png", "icon_32x32.png")
+_ICON_NAMES = (
+    "app_icon.ico",
+    "logo.svg",
+    "logo.png",
+    "icon_256x256.png",
+    "icon_64x64.png",
+    "icon_32x32.png",
+)
 
 
 def _first_existing(names):
@@ -76,7 +92,9 @@ def icon(name, color=None):
     if qta is None:
         return None
     try:
-        return qta.icon(name, color=color or tokens.PALETTES[tokens.DEFAULT_THEME]["muted"])
+        return qta.icon(
+            name, color=color or tokens.PALETTES[tokens.DEFAULT_THEME]["muted"]
+        )
     except Exception:
         return None
 
@@ -164,8 +182,8 @@ class ResultArea(QStackedWidget):
         super().__init__(parent)
         self._empty = EmptyState(message, glyph)
         self.content = content
-        self.addWidget(self._empty)    # index 0
-        self.addWidget(content)        # index 1
+        self.addWidget(self._empty)  # index 0
+        self.addWidget(content)  # index 1
 
     def set_empty(self, is_empty, message=None):
         if message is not None:
@@ -191,7 +209,7 @@ class Spinner(QWidget):
 
     def start(self):
         if not self._timer.isActive():
-            self._timer.start(60)        # ~16 fps: smooth enough, negligible cost
+            self._timer.start(60)  # ~16 fps: smooth enough, negligible cost
         self.show()
 
     def stop(self):

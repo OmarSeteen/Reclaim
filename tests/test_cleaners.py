@@ -9,8 +9,7 @@ import os
 import tempfile
 import unittest
 
-from Reclaim import cleaners, config, fsutils, locations
-
+from Reclaim import cleaners, fsutils, locations
 
 VALID_KINDS = {"dirs", "files", "recycle", "command"}
 REQUIRED_KEYS = {"key", "label", "desc", "kind", "needs_admin"}
@@ -32,15 +31,24 @@ class TestCleanerRecords(unittest.TestCase):
 
     def test_new_categories_present(self):
         keys = {c["key"] for c in cleaners.CLEANERS}
-        for expected in ("devcaches", "sysdumps", "winlogs",
-                         "winsxs", "hiberfil", "windows_old"):
+        for expected in (
+            "devcaches",
+            "sysdumps",
+            "winlogs",
+            "winsxs",
+            "hiberfil",
+            "windows_old",
+        ):
             self.assertIn(expected, keys)
 
 
 class TestAnalyzeCommand(unittest.TestCase):
     def test_command_uses_estimate_when_present(self):
-        fake = {"kind": "command", "run": lambda log: True,
-                "estimate": lambda: (1234, 1)}
+        fake = {
+            "kind": "command",
+            "run": lambda log: True,
+            "estimate": lambda: (1234, 1),
+        }
         self.assertEqual(cleaners.analyze_cleaner(fake), (1234, 1))
 
     def test_command_without_estimate_reports_nothing(self):
@@ -53,8 +61,10 @@ class TestCleanDispatch(unittest.TestCase):
         # Off Windows the run() no-ops, so freed space can't go negative and the
         # skip message is logged rather than crashing.
         logs = []
-        fake = {"kind": "command",
-                "run": lambda log: cleaners.winapi.run_maintenance_command(["whoami"])}
+        fake = {
+            "kind": "command",
+            "run": lambda log: cleaners.winapi.run_maintenance_command(["whoami"]),
+        }
         freed = cleaners.clean_cleaner(fake, logs.append)
         self.assertGreaterEqual(freed, 0)
 
@@ -86,8 +96,12 @@ class TestPreview(unittest.TestCase):
         self.assertEqual(rows[0][1], 5000)
 
     def test_command_preview_uses_estimate(self):
-        fake = {"kind": "command", "desc": "Run a thing", "run": lambda log: True,
-                "estimate": lambda: (999, 1)}
+        fake = {
+            "kind": "command",
+            "desc": "Run a thing",
+            "run": lambda log: True,
+            "estimate": lambda: (999, 1),
+        }
         rows = cleaners.preview_cleaner(fake)
         self.assertEqual(rows, [("Run a thing", 999)])
 

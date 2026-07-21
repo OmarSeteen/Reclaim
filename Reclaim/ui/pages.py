@@ -8,19 +8,38 @@ protocol: `pool`, `cancel_event`, `is_busy()`, `begin_busy()`, `end_busy()`,
 import os
 import time
 
-from PySide6.QtCore import Qt, QRectF, QTimer, Signal
+from PySide6.QtCore import QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
-    QAbstractItemView, QCheckBox, QComboBox, QFileDialog, QHBoxLayout,
-    QHeaderView, QLineEdit, QScrollArea, QSpinBox,
-    QTabWidget, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
-    QVBoxLayout, QWidget,
+    QAbstractItemView,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QLineEdit,
+    QScrollArea,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
 
 from .. import analyzer, cleaners, config, locations, settings, treemap, winapi
-from ..fsutils import human, months_old, find_old_files, move_files, list_drives, disk_free
+from ..fsutils import (
+    disk_free,
+    find_old_files,
+    human,
+    list_drives,
+    months_old,
+    move_files,
+)
 from ..i18n import t
-from . import chrome, tokens, theme, workers
+from . import chrome, theme, tokens, workers
 from .widgets import Card, DangerButton, GhostButton, PrimaryButton, ResultArea, label
 
 
@@ -34,7 +53,7 @@ def _table(headers, stretch_col):
     table.setSelectionMode(QAbstractItemView.ExtendedSelection)
     table.verticalHeader().setVisible(False)
     table.setAlternatingRowColors(True)
-    table.setShowGrid(False)        # cleaner: rely on alternating rows, not gridlines
+    table.setShowGrid(False)  # cleaner: rely on alternating rows, not gridlines
     table.horizontalHeader().setSectionResizeMode(stretch_col, QHeaderView.Stretch)
     return table
 
@@ -83,8 +102,10 @@ class PageBase(QWidget):
                 then()
 
         workers.submit(
-            self.host.pool, make_job,
-            on_result=on_result, on_progress=on_progress,
+            self.host.pool,
+            make_job,
+            on_result=on_result,
+            on_progress=on_progress,
             on_error=lambda m: self.host.log(f"ERROR: {m}"),
             on_cancelled=lambda: self.host.log(t("Cancelled.")),
             on_finished=finished,
@@ -103,13 +124,14 @@ class CleanupPage(PageBase):
         self.cleaners = cleaners.CLEANERS
         self.checks = {}
         self.size_labels = {}
-        self._cards = {}            # key -> the card QWidget (for re-sorting)
-        self._sizes = {}            # key -> last analyzed size (drives the order)
+        self._cards = {}  # key -> the card QWidget (for re-sorting)
+        self._sizes = {}  # key -> last analyzed size (drives the order)
 
         outer = QVBoxLayout(self)
         # No top margin: the page title hugs the top of the content area.
-        outer.setContentsMargins(tokens.PAGE_MARGIN, 0,
-                                 tokens.PAGE_MARGIN, tokens.PAGE_MARGIN)
+        outer.setContentsMargins(
+            tokens.PAGE_MARGIN, 0, tokens.PAGE_MARGIN, tokens.PAGE_MARGIN
+        )
         outer.setSpacing(tokens.PAGE_SPACING)
         outer.addWidget(label(t("Cleanup"), role="display"))
 
@@ -117,7 +139,7 @@ class CleanupPage(PageBase):
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.NoFrame)
         host_w = QWidget()
-        host_w.setObjectName("ScrollBody")   # so the QSS gives it the page bg
+        host_w.setObjectName("ScrollBody")  # so the QSS gives it the page bg
         self._cards_layout = QVBoxLayout(host_w)
         self._cards_layout.setContentsMargins(0, 0, 0, 0)
         self._cards_layout.setSpacing(tokens.SP_3)
@@ -159,7 +181,7 @@ class CleanupPage(PageBase):
         card = Card()
         top = QHBoxLayout()
         chk = QCheckBox(t(c["label"]))
-        chk.setChecked(False)        # nothing selected by default
+        chk.setChecked(False)  # nothing selected by default
         self.checks[c["key"]] = chk
         size = label("—", role="size")
         self.size_labels[c["key"]] = size
@@ -175,8 +197,9 @@ class CleanupPage(PageBase):
 
     def _sort_cards(self):
         """Reorder the cards biggest-reclaimable-first using the latest sizes."""
-        order = sorted(self.cleaners,
-                       key=lambda c: self._sizes.get(c["key"], 0), reverse=True)
+        order = sorted(
+            self.cleaners, key=lambda c: self._sizes.get(c["key"], 0), reverse=True
+        )
         for index, c in enumerate(order):
             self._cards_layout.insertWidget(index, self._cards[c["key"]])
 
@@ -198,11 +221,12 @@ class CleanupPage(PageBase):
                 total = 0
                 for c in self.cleaners:
                     if self.host.cancel_event.is_set():
-                        break          # honour Cancel; show what we have so far
+                        break  # honour Cancel; show what we have so far
                     size, count = cleaners.analyze_cleaner(c)
                     total += size
                     progress((c["key"], size))
                 return total
+
             return job
 
         def on_size(payload):
@@ -220,8 +244,7 @@ class CleanupPage(PageBase):
     def on_preview(self):
         selected = self._selected()
         if not selected:
-            chrome.notify(self, t("Nothing selected"),
-                                    t("Tick at least one category."))
+            chrome.notify(self, t("Nothing selected"), t("Tick at least one category."))
             return
 
         def make(progress):
@@ -232,15 +255,24 @@ class CleanupPage(PageBase):
     def _show_preview(self, sections):
         dlg, col = chrome.frameless_dialog(self, t("Preview — what would be removed"))
         dlg.resize(760, 540)
-        col.addWidget(label(t("Nothing is deleted here. This is exactly what "
-                              "'Clean selected' would remove."), role="muted"))
+        col.addWidget(
+            label(
+                t(
+                    "Nothing is deleted here. This is exactly what "
+                    "'Clean selected' would remove."
+                ),
+                role="muted",
+            )
+        )
         tree = QTreeWidget()
         tree.setColumnCount(2)
         tree.setHeaderLabels([t("Category / path"), t("Size")])
         tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
         for cat_label, rows in sections:
             total = sum(sz for _p, sz in rows)
-            head = QTreeWidgetItem(tree, [f"{t(cat_label)} — {len(rows)}", human(total)])
+            head = QTreeWidgetItem(
+                tree, [f"{t(cat_label)} — {len(rows)}", human(total)]
+            )
             for path, sz in rows:
                 QTreeWidgetItem(head, [str(path), human(sz)])
             if not rows:
@@ -260,20 +292,29 @@ class CleanupPage(PageBase):
     def on_clean(self):
         selected = self._selected()
         if not selected:
-            chrome.notify(self, t("Nothing selected"),
-                                    t("Tick at least one category."))
+            chrome.notify(self, t("Nothing selected"), t("Tick at least one category."))
             return
-        if (any(c["needs_admin"] for c in selected) and not winapi.is_admin()
-                and config.IS_WINDOWS):
-            if not self._ask("Administrator recommended",
-                             t("Some selected items need admin to clear fully.\n"
-                               "Locked files are skipped.\n\nContinue anyway?")):
+        if (
+            any(c["needs_admin"] for c in selected)
+            and not winapi.is_admin()
+            and config.IS_WINDOWS
+        ):
+            if not self._ask(
+                "Administrator recommended",
+                t(
+                    "Some selected items need admin to clear fully.\n"
+                    "Locked files are skipped.\n\nContinue anyway?"
+                ),
+            ):
                 return
         names = "\n".join(f"   •  {t(c['label'])}" for c in selected)
-        if not self._ask("Confirm cleanup",
-                         t("Permanently delete the contents of:\n\n{names}\n\n"
-                           "Files in use are skipped automatically.\n\nProceed?"
-                           ).format(names=names)):
+        if not self._ask(
+            "Confirm cleanup",
+            t(
+                "Permanently delete the contents of:\n\n{names}\n\n"
+                "Files in use are skipped automatically.\n\nProceed?"
+            ).format(names=names),
+        ):
             return
 
         log = self.host.log
@@ -294,8 +335,10 @@ class CleanupPage(PageBase):
                 # Concise history line: amount + drive free before/after.
                 settings.record_cleanup(
                     f"Freed {human(total)}.  {drive} free "
-                    f"{human(before)} -> {human(after)}.")
+                    f"{human(before)} -> {human(after)}."
+                )
                 return total
+
             return job
 
         def cleared(payload):
@@ -304,10 +347,16 @@ class CleanupPage(PageBase):
 
         def done(total):
             self.total.setText(t("Freed {v} this run").format(v=human(total)))
-            self.host.toast(t("Cleanup complete.\nFreed approximately {v}.").format(
-                v=human(total)).replace("\n", " "))
-            self.host.log(t("Cleanup complete.\nFreed approximately {v}.").format(
-                v=human(total)).replace("\n", " "))
+            self.host.toast(
+                t("Cleanup complete.\nFreed approximately {v}.")
+                .format(v=human(total))
+                .replace("\n", " ")
+            )
+            self.host.log(
+                t("Cleanup complete.\nFreed approximately {v}.")
+                .format(v=human(total))
+                .replace("\n", " ")
+            )
 
         # Re-analyze afterward so sizes/total/order reflect what's left.
         self._run(make, on_result=done, on_progress=cleared, then=self._analyze)
@@ -333,7 +382,7 @@ class TreemapView(QWidget):
         self._dir_sizes = {}
         self._root = None
         self._node = None
-        self._tiles = []      # (QRectF, path, is_dir)
+        self._tiles = []  # (QRectF, path, is_dir)
 
     def set_scan(self, root, dir_sizes):
         self._dir_sizes = dir_sizes
@@ -365,7 +414,7 @@ class TreemapView(QWidget):
         total = self._dir_sizes.get(self._node, sum(c[0] for c in children)) or 1
         floor = total * config.TREEMAP_MIN_FRACTION
         big = [c for c in children[:cap] if c[0] >= floor]
-        rest = sum(c[0] for c in children[len(big):])
+        rest = sum(c[0] for c in children[len(big) :])
         items = [(c[0], c) for c in big]
         if rest > 0:
             items.append((rest, ("rest",)))
@@ -378,7 +427,13 @@ class TreemapView(QWidget):
             rect = QRectF(x, y, w - 1, h - 1)
             if payload[0] == "rest":
                 # The catch-all tile stays neutral so it doesn't read as a category.
-                fill, name, path, is_dir, size = pal["surface_alt"], t("(smaller items)"), None, False, rest
+                fill, name, path, is_dir, size = (
+                    pal["surface_alt"],
+                    t("(smaller items)"),
+                    None,
+                    False,
+                    rest,
+                )
                 text_color = pal["text"]
             else:
                 size, path, is_dir, name = payload
@@ -396,8 +451,11 @@ class TreemapView(QWidget):
                 self._tiles.append((rect, path, is_dir))
             if w > 54 and h > 26:
                 painter.setPen(QColor(text_color))
-                painter.drawText(QRectF(x + 6, y + 5, w - 10, h - 8),
-                                 Qt.AlignLeft | Qt.AlignTop, f"{name}\n{human(size)}")
+                painter.drawText(
+                    QRectF(x + 6, y + 5, w - 10, h - 8),
+                    Qt.AlignLeft | Qt.AlignTop,
+                    f"{name}\n{human(size)}",
+                )
         painter.end()
 
     def mousePressEvent(self, event):
@@ -420,8 +478,9 @@ class AnalyzerPage(PageBase):
 
         outer = QVBoxLayout(self)
         # No top margin: the page title hugs the top of the content area.
-        outer.setContentsMargins(tokens.PAGE_MARGIN, 0,
-                                 tokens.PAGE_MARGIN, tokens.PAGE_MARGIN)
+        outer.setContentsMargins(
+            tokens.PAGE_MARGIN, 0, tokens.PAGE_MARGIN, tokens.PAGE_MARGIN
+        )
         outer.setSpacing(tokens.PAGE_SPACING)
         outer.addWidget(label(t("Disk Analyzer"), role="display"))
 
@@ -461,26 +520,32 @@ class AnalyzerPage(PageBase):
         self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tree.itemExpanded.connect(self._on_expand)
         self.tree.itemDoubleClicked.connect(
-            lambda it, _c: _open_path(it.data(0, Qt.UserRole)))
+            lambda it, _c: _open_path(it.data(0, Qt.UserRole))
+        )
         tabs.addTab(self.tree, t("Folder tree"))
 
         outer.addWidget(tabs, 1)
-        self.status = label(t("Scan a drive to map every folder and file."), role="muted")
+        self.status = label(
+            t("Scan a drive to map every folder and file."), role="muted"
+        )
         outer.addWidget(self.status)
 
     def on_scan(self):
         path = self.drive.currentText()
         if not os.path.isdir(path):
-            chrome.notify(self, t("Invalid folder"),
-                                 t("Not a folder:\n{path}").format(path=path))
+            chrome.notify(
+                self, t("Invalid folder"), t("Not a folder:\n{path}").format(path=path)
+            )
             return
         self.host.log(t("Scanning {p}…").format(p=path))
 
         def make(progress):
             return lambda: analyzer.build_size_map(
-                path, on_progress=progress,
+                path,
+                on_progress=progress,
                 should_cancel=self.host.cancel_event.is_set,
-                excluded=settings.load().get("excluded_dirs", []))
+                excluded=settings.load().get("excluded_dirs", []),
+            )
 
         def on_count(n):
             self.host.set_busy_text(t("Scanned {n} files…").format(n=f"{n:,}"))
@@ -498,14 +563,22 @@ class AnalyzerPage(PageBase):
         self._fill_node(root, base)
         root.setExpanded(True)
         self.treemap.set_scan(base, result.dir_sizes)
-        self.status.setText(t("Scanned {n} files · {sz} total.").format(
-            n=f"{result.scanned:,}", sz=human(result.total)))
-        self.host.log(t("Scanned {n} files · {sz} total.").format(
-            n=f"{result.scanned:,}", sz=human(result.total)))
+        self.status.setText(
+            t("Scanned {n} files · {sz} total.").format(
+                n=f"{result.scanned:,}", sz=human(result.total)
+            )
+        )
+        self.host.log(
+            t("Scanned {n} files · {sz} total.").format(
+                n=f"{result.scanned:,}", sz=human(result.total)
+            )
+        )
 
     def _fill_node(self, item, path):
         parent = self.dir_sizes.get(path, 0) or 1
-        for size, p, is_dir, name in _dir_children(path, self.dir_sizes)[:config.TREE_CHILD_CAP]:
+        for size, p, is_dir, name in _dir_children(path, self.dir_sizes)[
+            : config.TREE_CHILD_CAP
+        ]:
             pct = size / parent * 100 if parent else 0
             child = QTreeWidgetItem(item, [name or p, human(size), f"{pct:.0f}%"])
             child.setData(0, Qt.UserRole, p)
@@ -538,8 +611,9 @@ class DuplicatesPage(PageBase):
         super().__init__(host)
         outer = QVBoxLayout(self)
         # No top margin: the page title hugs the top of the content area.
-        outer.setContentsMargins(tokens.PAGE_MARGIN, 0,
-                                 tokens.PAGE_MARGIN, tokens.PAGE_MARGIN)
+        outer.setContentsMargins(
+            tokens.PAGE_MARGIN, 0, tokens.PAGE_MARGIN, tokens.PAGE_MARGIN
+        )
         outer.setSpacing(tokens.PAGE_SPACING)
         outer.addWidget(label(t("Duplicates"), role="display"))
 
@@ -554,9 +628,9 @@ class DuplicatesPage(PageBase):
         self.min_mb = QSpinBox()
         self.min_mb.setRange(1, 100000)
         self.min_mb.setValue(config.DUP_MIN_SIZE // (1024 * 1024))
-        self.min_mb.setButtonSymbols(QSpinBox.NoButtons)   # no up/down arrows
-        self.min_mb.setFixedWidth(72)                      # fits up to "100000"
-        self.min_mb.setAlignment(Qt.AlignCenter)           # centred in LTR + RTL
+        self.min_mb.setButtonSymbols(QSpinBox.NoButtons)  # no up/down arrows
+        self.min_mb.setFixedWidth(72)  # fits up to "100000"
+        self.min_mb.setAlignment(Qt.AlignCenter)  # centred in LTR + RTL
         row.addWidget(self.min_mb)
         row.addWidget(label(t("MB")))
         find = PrimaryButton(t("Find duplicates"))
@@ -590,7 +664,8 @@ class DuplicatesPage(PageBase):
         self.tree.setSelectionMode(QAbstractItemView.NoSelection)
         self.tree.setFocusPolicy(Qt.NoFocus)
         self.area = ResultArea(
-            self.tree, t("Scan a folder to find duplicate files."), "fa5s.clone")
+            self.tree, t("Scan a folder to find duplicate files."), "fa5s.clone"
+        )
         outer.addWidget(self.area, 1)
 
         bar = QHBoxLayout()
@@ -607,27 +682,39 @@ class DuplicatesPage(PageBase):
         outer.addLayout(bar)
 
         self.status = label(
-            t("Finds byte-identical copies. Keeps one, sends the rest to the "
-              "Recycle Bin (undoable)."), role="muted")
+            t(
+                "Finds byte-identical copies. Keeps one, sends the rest to the "
+                "Recycle Bin (undoable)."
+            ),
+            role="muted",
+        )
         outer.addWidget(self.status)
 
     def on_find(self):
         folder = self.path.text()
         if not os.path.isdir(folder):
-            chrome.notify(self, t("Invalid folder"),
-                                 t("Not a folder:\n{path}").format(path=folder))
+            chrome.notify(
+                self,
+                t("Invalid folder"),
+                t("Not a folder:\n{path}").format(path=folder),
+            )
             return
         min_size = self.min_mb.value() * 1024 * 1024
         self.host.log(t("Scanning for duplicates…"))
 
         def make(progress):
             return lambda: analyzer.find_duplicates(
-                folder, min_size, on_progress=progress,
+                folder,
+                min_size,
+                on_progress=progress,
                 should_cancel=self.host.cancel_event.is_set,
-                excluded=settings.load().get("excluded_dirs", []))
+                excluded=settings.load().get("excluded_dirs", []),
+            )
 
         def on_count(n):
-            self.host.set_busy_text(t("Hashing… {n} candidate files").format(n=f"{n:,}"))
+            self.host.set_busy_text(
+                t("Hashing… {n} candidate files").format(n=f"{n:,}")
+            )
 
         self._run(make, on_result=self._set_results, on_progress=on_count)
 
@@ -635,8 +722,13 @@ class DuplicatesPage(PageBase):
         """Store a fresh result set, reset the filters, and repopulate the type
         picker from the extensions actually present."""
         self._groups = groups
-        exts = sorted({os.path.splitext(p)[1].lower() or "(no ext)"
-                       for g in groups for p in g.paths})
+        exts = sorted(
+            {
+                os.path.splitext(p)[1].lower() or "(no ext)"
+                for g in groups
+                for p in g.paths
+            }
+        )
         self.type_box.blockSignals(True)
         self.type_box.clear()
         self.type_box.addItem(t("All types"))
@@ -646,9 +738,12 @@ class DuplicatesPage(PageBase):
         self.filter_text.blockSignals(True)
         self.filter_text.clear()
         self.filter_text.blockSignals(False)
-        self.host.log(t("{n} duplicate groups · {sz} reclaimable.").format(
-            n=f"{len(groups):,}",
-            sz=human(sum(g.size * (len(g.paths) - 1) for g in groups))))
+        self.host.log(
+            t("{n} duplicate groups · {sz} reclaimable.").format(
+                n=f"{len(groups):,}",
+                sz=human(sum(g.size * (len(g.paths) - 1) for g in groups)),
+            )
+        )
         self._render(groups)
 
     def _filtered(self):
@@ -663,8 +758,9 @@ class DuplicatesPage(PageBase):
             if text and not any(text in p.lower() for p in g.paths):
                 continue
             if not type_all and not any(
-                    (os.path.splitext(p)[1].lower() or "(no ext)") == chosen
-                    for p in g.paths):
+                (os.path.splitext(p)[1].lower() or "(no ext)") == chosen
+                for p in g.paths
+            ):
                 continue
             out.append(g)
         return out
@@ -677,29 +773,46 @@ class DuplicatesPage(PageBase):
         wasted = sum(g.size * (len(g.paths) - 1) for g in groups)
         for g in groups:
             reclaim = g.size * (len(g.paths) - 1)
-            head = QTreeWidgetItem(self.tree, [
-                t("{n} copies · {sz} reclaimable").format(
-                    n=len(g.paths), sz=human(reclaim)), human(g.size)])
+            head = QTreeWidgetItem(
+                self.tree,
+                [
+                    t("{n} copies · {sz} reclaimable").format(
+                        n=len(g.paths), sz=human(reclaim)
+                    ),
+                    human(g.size),
+                ],
+            )
             for p in g.paths:
                 child = QTreeWidgetItem(head, [os.path.basename(p), human(g.size)])
                 child.setData(0, Qt.UserRole, p)
-                child.setToolTip(0, p)                          # full path on hover
+                child.setToolTip(0, p)  # full path on hover
                 child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
-                child.setCheckState(0, Qt.Unchecked)            # pick copies to remove
-            head.setExpanded(True)                              # show the copies + boxes
+                child.setCheckState(0, Qt.Unchecked)  # pick copies to remove
+            head.setExpanded(True)  # show the copies + boxes
         total = len(self._groups)
         if not groups:
-            self.area.set_empty(True, t("No duplicates found.") if not total
-                                else t("No duplicates match the filter."))
+            self.area.set_empty(
+                True,
+                (
+                    t("No duplicates found.")
+                    if not total
+                    else t("No duplicates match the filter.")
+                ),
+            )
         else:
             self.area.set_empty(False)
         if total and len(groups) != total:
             self.status.setText(
                 t("Showing {shown} of {total} groups · {sz} reclaimable.").format(
-                    shown=len(groups), total=total, sz=human(wasted)))
+                    shown=len(groups), total=total, sz=human(wasted)
+                )
+            )
         else:
-            self.status.setText(t("{n} duplicate groups · {sz} reclaimable.").format(
-                n=f"{len(groups):,}", sz=human(wasted)))
+            self.status.setText(
+                t("{n} duplicate groups · {sz} reclaimable.").format(
+                    n=f"{len(groups):,}", sz=human(wasted)
+                )
+            )
 
     def _select_redundant(self):
         """Tick every copy except the first in each group (keep one)."""
@@ -730,13 +843,19 @@ class DuplicatesPage(PageBase):
     def on_delete(self):
         paths = self._selected_paths()
         if not paths:
-            chrome.notify(self, t("Nothing selected"),
-                                    t("Select the duplicate files to remove first."))
+            chrome.notify(
+                self,
+                t("Nothing selected"),
+                t("Select the duplicate files to remove first."),
+            )
             return
-        if not self._ask("Move to Recycle Bin",
-                         t("Move {n} duplicate file(s) to the Recycle Bin?\n\n"
-                           "They stay recoverable there until you empty it."
-                           ).format(n=len(paths))):
+        if not self._ask(
+            "Move to Recycle Bin",
+            t(
+                "Move {n} duplicate file(s) to the Recycle Bin?\n\n"
+                "They stay recoverable there until you empty it."
+            ).format(n=len(paths)),
+        ):
             return
 
         # Log each path + whether it resolves on disk, so a "freed 0 B" result
@@ -751,11 +870,18 @@ class DuplicatesPage(PageBase):
 
         def done(freed):
             if freed:
-                self.host.toast(t("Moved {n} duplicates to Recycle Bin · freed {sz}.").format(
-                    n=len(paths), sz=human(freed)))
+                self.host.toast(
+                    t("Moved {n} duplicates to Recycle Bin · freed {sz}.").format(
+                        n=len(paths), sz=human(freed)
+                    )
+                )
             else:
-                self.host.toast(t("Nothing removed — the selected files weren't found "
-                                  "(in use, protected, or already gone)."))
+                self.host.toast(
+                    t(
+                        "Nothing removed — the selected files weren't found "
+                        "(in use, protected, or already gone)."
+                    )
+                )
 
         # Re-scan via `then` (after the busy state clears) so the removed copies
         # drop off — from on_result it would hit _run's busy guard and do nothing.
@@ -770,8 +896,9 @@ class OldFilesPage(PageBase):
         super().__init__(host)
         outer = QVBoxLayout(self)
         # No top margin: the page title hugs the top of the content area.
-        outer.setContentsMargins(tokens.PAGE_MARGIN, 0,
-                                 tokens.PAGE_MARGIN, tokens.PAGE_MARGIN)
+        outer.setContentsMargins(
+            tokens.PAGE_MARGIN, 0, tokens.PAGE_MARGIN, tokens.PAGE_MARGIN
+        )
         outer.setSpacing(tokens.PAGE_SPACING)
         outer.addWidget(label(t("Claim old files"), role="display"))
 
@@ -786,8 +913,8 @@ class OldFilesPage(PageBase):
         self.months = QSpinBox()
         self.months.setRange(1, 99)
         self.months.setValue(config.DEFAULT_OLD_MONTHS)
-        self.months.setButtonSymbols(QSpinBox.NoButtons)   # no up/down arrows
-        self.months.setFixedWidth(48)                      # just wide enough for "99"
+        self.months.setButtonSymbols(QSpinBox.NoButtons)  # no up/down arrows
+        self.months.setFixedWidth(48)  # just wide enough for "99"
         self.months.setAlignment(Qt.AlignCenter)
         row.addWidget(self.months)
         row.addWidget(label(t("months")))
@@ -811,9 +938,11 @@ class OldFilesPage(PageBase):
         self.table.setFocusPolicy(Qt.NoFocus)
         self.table.setSortingEnabled(True)
         self.table.itemDoubleClicked.connect(
-            lambda it: _open_path(self.table.item(it.row(), 3).data(Qt.UserRole)))
+            lambda it: _open_path(self.table.item(it.row(), 3).data(Qt.UserRole))
+        )
         self.area = ResultArea(
-            self.table, t("Find files you haven't used in a while."), "fa5s.clock")
+            self.table, t("Find files you haven't used in a while."), "fa5s.clock"
+        )
         outer.addWidget(self.area, 1)
 
         bar = QHBoxLayout()
@@ -833,25 +962,34 @@ class OldFilesPage(PageBase):
         outer.addLayout(bar)
 
         self.status = label(
-            t("Lists files you haven't touched in a while. Relocate big files to "
-              "another drive, or send them to the Recycle Bin (undoable)."),
-            role="muted")
+            t(
+                "Lists files you haven't touched in a while. Relocate big files to "
+                "another drive, or send them to the Recycle Bin (undoable)."
+            ),
+            role="muted",
+        )
         outer.addWidget(self.status)
 
     def on_find(self):
         folder = self.path.text()
         if not os.path.isdir(folder):
-            chrome.notify(self, t("Invalid folder"),
-                                 t("Not a folder:\n{path}").format(path=folder))
+            chrome.notify(
+                self,
+                t("Invalid folder"),
+                t("Not a folder:\n{path}").format(path=folder),
+            )
             return
         months = self.months.value()
-        days = months * config.DAYS_PER_MONTH      # the finder works in days
+        days = months * config.DAYS_PER_MONTH  # the finder works in days
         self.host.log(t("Finding old files…"))
 
         def make(progress):
             return lambda: find_old_files(
-                folder, days, should_cancel=self.host.cancel_event.is_set,
-                excluded=settings.load().get("excluded_dirs", []))
+                folder,
+                days,
+                should_cancel=self.host.cancel_event.is_set,
+                excluded=settings.load().get("excluded_dirs", []),
+            )
 
         def done(results):
             now = time.time()
@@ -867,8 +1005,11 @@ class OldFilesPage(PageBase):
                 self._add_old_row(sz, now - mtime, fp)
             self.table.setSortingEnabled(True)
             self.area.set_empty(not results, t("No files found."))
-            self.status.setText(t("{n} files older than {m} months · {sz} total.").format(
-                n=f"{len(results):,}", m=months, sz=human(total)))
+            self.status.setText(
+                t("{n} files older than {m} months · {sz} total.").format(
+                    n=f"{len(results):,}", m=months, sz=human(total)
+                )
+            )
 
         self._run(make, on_result=done)
 
@@ -900,27 +1041,35 @@ class OldFilesPage(PageBase):
             self.table.item(r, 0).setCheckState(state)
 
     def _selected_paths(self):
-        return [self.table.item(r, 3).data(Qt.UserRole)
-                for r in range(self.table.rowCount())
-                if self.table.item(r, 0).checkState() == Qt.Checked]
+        return [
+            self.table.item(r, 3).data(Qt.UserRole)
+            for r in range(self.table.rowCount())
+            if self.table.item(r, 0).checkState() == Qt.Checked
+        ]
 
     def on_delete(self):
         paths = self._selected_paths()
         if not paths:
             chrome.notify(self, t("Nothing selected"), t("Select files first."))
             return
-        if not self._ask("Move to Recycle Bin",
-                         t("Move {n} file(s) to the Recycle Bin?\n\n"
-                           "They stay recoverable there until you empty it."
-                           ).format(n=len(paths))):
+        if not self._ask(
+            "Move to Recycle Bin",
+            t(
+                "Move {n} file(s) to the Recycle Bin?\n\n"
+                "They stay recoverable there until you empty it."
+            ).format(n=len(paths)),
+        ):
             return
 
         def make(progress):
             return lambda: winapi.send_to_recycle_bin(paths)
 
         def done(freed):
-            self.host.toast(t("Moved {n} files to Recycle Bin · freed {sz}.").format(
-                n=len(paths), sz=human(freed)))
+            self.host.toast(
+                t("Moved {n} files to Recycle Bin · freed {sz}.").format(
+                    n=len(paths), sz=human(freed)
+                )
+            )
 
         # Re-scan via `then` (fires after the busy state clears) so the moved
         # files drop off the list — calling on_find from on_result would hit the
@@ -963,7 +1112,8 @@ def _dir_children(path, dir_sizes):
 
 def _browse_into(widget, line_edit):
     chosen = QFileDialog.getExistingDirectory(
-        widget, t("Browse"), line_edit.text() or "/")
+        widget, t("Browse"), line_edit.text() or "/"
+    )
     if chosen:
         line_edit.setText(chosen)
 
@@ -989,21 +1139,28 @@ def _move_selected(page, paths, base, after=None):
         chrome.notify(page, t("Nothing selected"), t("Select files first."))
         return
     dest = QFileDialog.getExistingDirectory(
-        page, t("Choose a destination folder (ideally on another drive)"), "/")
+        page, t("Choose a destination folder (ideally on another drive)"), "/"
+    )
     if not dest or not os.path.isdir(dest):
         return
     src_drive = os.path.splitdrive(os.path.abspath(paths[0]))[0].upper()
     dst_drive = os.path.splitdrive(os.path.abspath(dest))[0].upper()
     if src_drive == dst_drive and not page._ask(
-            "Same drive",
-            t("The destination is on the same drive ({drive}).\n"
-              "Moving here won't free space on that drive.\n\nMove anyway?"
-              ).format(drive=dst_drive or "same volume")):
+        "Same drive",
+        t(
+            "The destination is on the same drive ({drive}).\n"
+            "Moving here won't free space on that drive.\n\nMove anyway?"
+        ).format(drive=dst_drive or "same volume"),
+    ):
         return
-    if not page._ask("Move files",
-                     t("Move {n} file(s) to:\n{dest}\n\nEach file is copied, then "
-                       "removed from its current location. Anything in use is "
-                       "skipped (and left where it is).").format(n=len(paths), dest=dest)):
+    if not page._ask(
+        "Move files",
+        t(
+            "Move {n} file(s) to:\n{dest}\n\nEach file is copied, then "
+            "removed from its current location. Anything in use is "
+            "skipped (and left where it is)."
+        ).format(n=len(paths), dest=dest),
+    ):
         return
 
     def make(progress):
@@ -1011,9 +1168,12 @@ def _move_selected(page, paths, base, after=None):
 
     def done(res):
         moved, freed = res
-        page.host.toast(t("Moved {n} of {total} files to {dest} · "
-                          "freed {sz} on the source drive.").format(
-                              n=moved, total=len(paths), dest=dest, sz=human(freed)))
+        page.host.toast(
+            t(
+                "Moved {n} of {total} files to {dest} · "
+                "freed {sz} on the source drive."
+            ).format(n=moved, total=len(paths), dest=dest, sz=human(freed))
+        )
 
     # `after` (e.g. re-scan) runs via `then`, after the busy state clears — from
     # on_result it would hit _run's busy guard and never fire.

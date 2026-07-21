@@ -41,7 +41,7 @@ def squarify(items, x, y, w, h):
     if not cells or w <= 0 or h <= 0:
         return []
     total = sum(wt for wt, _ in cells)
-    scale = (w * h) / total          # weight -> area in pixels^2
+    scale = (w * h) / total  # weight -> area in pixels^2
     cells = [(wt * scale, p) for wt, p in cells]
     cells.sort(key=lambda c: c[0], reverse=True)
 

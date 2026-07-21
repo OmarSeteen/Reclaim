@@ -24,8 +24,12 @@ class TestBuildSizeMap(unittest.TestCase):
     def test_totals_roll_up(self):
         r = analyzer.build_size_map(self.base)
         self.assertEqual(r.total, 3 * 1024 * 1024 + 5 * 1024 * 1024 + 2)
-        self.assertEqual(r.dir_sizes[os.path.join(self.base, "photos")], 3 * 1024 * 1024)
-        self.assertEqual(r.dir_sizes[os.path.join(self.base, "videos")], 5 * 1024 * 1024)
+        self.assertEqual(
+            r.dir_sizes[os.path.join(self.base, "photos")], 3 * 1024 * 1024
+        )
+        self.assertEqual(
+            r.dir_sizes[os.path.join(self.base, "videos")], 5 * 1024 * 1024
+        )
         self.assertEqual(r.scanned, 5)
 
     def test_largest_file_and_type_ranking(self):

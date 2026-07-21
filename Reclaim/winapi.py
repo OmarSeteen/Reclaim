@@ -45,6 +45,7 @@ def is_admin():
         return False
     try:
         import ctypes
+
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
     except Exception:
         return False
@@ -62,6 +63,7 @@ def relaunch_as_admin():
     try:
         import ctypes
         import subprocess
+
         # Quote argv per the Windows C-runtime rules rather than naively wrapping
         # each token in quotes: a value containing a literal " would otherwise
         # break out and inject extra arguments into the elevated relaunch.
@@ -110,6 +112,7 @@ def empty_recycle_bin():
     before, _ = recycle_bin_info()
     try:
         import ctypes
+
         flags = 0x01 | 0x02 | 0x04  # NOCONFIRMATION | NOPROGRESSUI | NOSOUND
         ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, flags)
     except Exception:
@@ -238,8 +241,9 @@ def remove_windows_old():
         f'rd /s /q "{target}"'
     )
     try:
-        subprocess.run([cmd, "/c", script], creationflags=_CREATE_NO_WINDOW,
-                       capture_output=True)
+        subprocess.run(
+            [cmd, "/c", script], creationflags=_CREATE_NO_WINDOW, capture_output=True
+        )
     except Exception:
         pass
     return not os.path.isdir(target)
@@ -273,22 +277,41 @@ def open_ntfs_volume(drive):
 
         k32.CreateFileW.restype = wintypes.HANDLE
         k32.CreateFileW.argtypes = [
-            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
-            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
         letter = drive.rstrip("\\/").rstrip(":")
         handle = k32.CreateFileW(
-            f"\\\\.\\{letter}:", GENERIC_READ, FILE_SHARE_RW, None,
-            OPEN_EXISTING, 0, None)
+            f"\\\\.\\{letter}:",
+            GENERIC_READ,
+            FILE_SHARE_RW,
+            None,
+            OPEN_EXISTING,
+            0,
+            None,
+        )
         if not handle or handle == INVALID:
             return None
 
         buf = ctypes.create_string_buffer(128)
         returned = wintypes.DWORD(0)
         ok = k32.DeviceIoControl(
-            handle, FSCTL_GET_NTFS_VOLUME_DATA, None, 0, buf, 128,
-            ctypes.byref(returned), None)
+            handle,
+            FSCTL_GET_NTFS_VOLUME_DATA,
+            None,
+            0,
+            buf,
+            128,
+            ctypes.byref(returned),
+            None,
+        )
         if not ok:
-            k32.CloseHandle(handle)        # not NTFS, or query failed
+            k32.CloseHandle(handle)  # not NTFS, or query failed
             return None
 
         raw = buf.raw
@@ -301,24 +324,28 @@ def open_ntfs_volume(drive):
             k32.CloseHandle(handle)
             return None
         if bytes_per_sector == 0:
-            bytes_per_sector = 512        # legacy default if the volume omits it
+            bytes_per_sector = 512  # legacy default if the volume omits it
 
         k32.SetFilePointerEx.argtypes = [
-            wintypes.HANDLE, ctypes.c_longlong,
-            ctypes.POINTER(ctypes.c_longlong), wintypes.DWORD]
+            wintypes.HANDLE,
+            ctypes.c_longlong,
+            ctypes.POINTER(ctypes.c_longlong),
+            wintypes.DWORD,
+        ]
 
         def read(offset, length):
             """Read `length` bytes at byte `offset` (caller keeps both
             sector-aligned, as MFT/cluster reads always are)."""
             pos = ctypes.c_longlong(0)
-            if not k32.SetFilePointerEx(handle, ctypes.c_longlong(offset),
-                                        ctypes.byref(pos), 0):  # FILE_BEGIN
+            if not k32.SetFilePointerEx(
+                handle, ctypes.c_longlong(offset), ctypes.byref(pos), 0
+            ):  # FILE_BEGIN
                 return b""
             out = ctypes.create_string_buffer(length)
             nread = wintypes.DWORD(0)
             if not k32.ReadFile(handle, out, length, ctypes.byref(nread), None):
                 return b""
-            return out.raw[:nread.value]
+            return out.raw[: nread.value]
 
         return {
             "bytes_per_sector": bytes_per_sector,

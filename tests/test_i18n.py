@@ -7,7 +7,7 @@ from Reclaim import i18n
 
 class TestI18n(unittest.TestCase):
     def tearDown(self):
-        i18n.set_language("en")            # never leak language into other tests
+        i18n.set_language("en")  # never leak language into other tests
 
     def test_english_passes_through(self):
         i18n.set_language("en")
@@ -17,9 +17,11 @@ class TestI18n(unittest.TestCase):
     def test_arabic_translates_known_and_falls_back(self):
         i18n.set_language("ar")
         self.assertTrue(i18n.is_rtl())
-        self.assertNotEqual(i18n.t("Analyze"), "Analyze")          # translated
-        self.assertEqual(i18n.t("a string with no translation yet"),
-                         "a string with no translation yet")        # graceful fallback
+        self.assertNotEqual(i18n.t("Analyze"), "Analyze")  # translated
+        self.assertEqual(
+            i18n.t("a string with no translation yet"),
+            "a string with no translation yet",
+        )  # graceful fallback
 
     def test_unknown_language_falls_back_to_english(self):
         i18n.set_language("zz")

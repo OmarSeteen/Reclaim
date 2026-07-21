@@ -79,7 +79,7 @@ SCAN_STATUS_INTERVAL = 0.4
 # day count find_old_files actually uses (it works in days).
 DEFAULT_OLD_DAYS = 90
 DAYS_PER_MONTH = 30
-DEFAULT_OLD_MONTHS = DEFAULT_OLD_DAYS // DAYS_PER_MONTH   # 3 months
+DEFAULT_OLD_MONTHS = DEFAULT_OLD_DAYS // DAYS_PER_MONTH  # 3 months
 
 # --- Duplicate finder ------------------------------------------------------ #
 # Ignore files below this size. Tiny duplicates aren't worth the scan cost or
@@ -100,8 +100,11 @@ DUP_HASH_CHUNK = 1 * 1024 * 1024
 # remove superseded components. /ResetBase makes the cleanup permanent (existing
 # updates can no longer be uninstalled), which is the trade-off for max space.
 DISM_COMPONENT_CLEANUP = [
-    os.path.join(SYSTEM32, "Dism.exe"), "/online", "/Cleanup-Image",
-    "/StartComponentCleanup", "/ResetBase",
+    os.path.join(SYSTEM32, "Dism.exe"),
+    "/online",
+    "/Cleanup-Image",
+    "/StartComponentCleanup",
+    "/ResetBase",
 ]
 # Turning hibernation off deletes hiberfil.sys (often several GB). This also
 # disables Fast Startup, so it is offered as an explicit, reversible choice

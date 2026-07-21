@@ -26,8 +26,8 @@ from . import config, fsutils
 Record = namedtuple("Record", "number in_use is_dir name parent size")
 
 # NTFS constants.
-ROOT_RECORD = 5            # the MFT record number of the volume root directory
-FIRST_USER_RECORD = 16     # records 0..15 are reserved metafiles ($MFT, etc.)
+ROOT_RECORD = 5  # the MFT record number of the volume root directory
+FIRST_USER_RECORD = 16  # records 0..15 are reserved metafiles ($MFT, etc.)
 ATTR_FILE_NAME = 0x30
 ATTR_DATA = 0x80
 ATTR_END = 0xFFFFFFFF
@@ -37,7 +37,7 @@ def _u(data, off, size):
     """Little-endian unsigned int of `size` bytes at `off`, or 0 if out of range."""
     if off + size > len(data) or off < 0:
         return 0
-    return int.from_bytes(data[off:off + size], "little", signed=False)
+    return int.from_bytes(data[off : off + size], "little", signed=False)
 
 
 def apply_fixup(record, sector_size=512):
@@ -61,7 +61,7 @@ def apply_fixup(record, sector_size=512):
         src = usa_off + i * 2
         if sector_end + 2 > len(fixed) or src + 2 > len(record):
             break
-        fixed[sector_end:sector_end + 2] = record[src:src + 2]
+        fixed[sector_end : sector_end + 2] = record[src : src + 2]
     return bytes(fixed)
 
 
@@ -69,7 +69,7 @@ def _iter_attributes(rec):
     """Yield (type, non_resident, name_len, attr_offset, attr_len) for each
     attribute in a fixed-up record, stopping at the end marker. Bounds-checked so
     a malformed record can't run off the end."""
-    off = _u(rec, 20, 2)            # offset to first attribute
+    off = _u(rec, 20, 2)  # offset to first attribute
     while off + 8 <= len(rec):
         atype = _u(rec, off, 4)
         if atype == ATTR_END:
@@ -113,19 +113,19 @@ def parse_record(record, number, sector_size=512):
         if atype == ATTR_FILE_NAME:
             content_off = _u(rec, off + 20, 2)
             c = off + content_off
-            par = _u(rec, c, 6)                 # low 48 bits = parent record no.
+            par = _u(rec, c, 6)  # low 48 bits = parent record no.
             fn_chars = rec[c + 64] if c + 64 < len(rec) else 0
             ns = rec[c + 65] if c + 65 < len(rec) else 0
-            nm = rec[c + 66:c + 66 + fn_chars * 2].decode("utf-16-le", "replace")
+            nm = rec[c + 66 : c + 66 + fn_chars * 2].decode("utf-16-le", "replace")
             if name is None or _ns_priority(ns) > _ns_priority(name_ns):
                 name, name_ns, parent = nm, ns, par
         elif atype == ATTR_DATA and name_len == 0:
             # Only the unnamed stream is "the file"; named streams are ADS and
             # aren't counted by a normal directory walk, so we ignore them.
             if non_resident:
-                size = _u(rec, off + 48, 8)      # real (logical) size
+                size = _u(rec, off + 48, 8)  # real (logical) size
             else:
-                size = _u(rec, off + 16, 4)      # resident content length
+                size = _u(rec, off + 16, 4)  # resident content length
     return Record(number, in_use, is_dir, name, parent, size)
 
 
@@ -149,12 +149,12 @@ def parse_data_runs(data):
         i += 1
         if len_bytes == 0 or i + len_bytes + off_bytes > len(data):
             break
-        run_len = int.from_bytes(data[i:i + len_bytes], "little", signed=False)
+        run_len = int.from_bytes(data[i : i + len_bytes], "little", signed=False)
         i += len_bytes
         if off_bytes == 0:
-            runs.append((run_len, None))         # sparse
+            runs.append((run_len, None))  # sparse
             continue
-        lcn += int.from_bytes(data[i:i + off_bytes], "little", signed=True)
+        lcn += int.from_bytes(data[i : i + off_bytes], "little", signed=True)
         i += off_bytes
         runs.append((run_len, lcn))
     return runs
@@ -172,12 +172,19 @@ def mft_data_runs(record0, sector_size=512):
     for atype, non_resident, name_len, off, _alen in _iter_attributes(rec):
         if atype == ATTR_DATA and name_len == 0 and non_resident:
             runs_off = _u(rec, off + 32, 2)
-            return parse_data_runs(rec[off + runs_off:off + _alen])
+            return parse_data_runs(rec[off + runs_off : off + _alen])
     return []
 
 
-def scan(reader, bytes_per_cluster, record_size, mft_start_lcn,
-         on_progress=None, should_cancel=None, sector_size=512):
+def scan(
+    reader,
+    bytes_per_cluster,
+    record_size,
+    mft_start_lcn,
+    on_progress=None,
+    should_cancel=None,
+    sector_size=512,
+):
     """Read and parse every MFT record, returning a list of Record.
 
     `reader(byte_offset, length) -> bytes` is supplied by winapi and reads raw
@@ -216,8 +223,7 @@ def scan(reader, bytes_per_cluster, record_size, mft_start_lcn,
             if not data:
                 break
             for off in range(0, len(data) - record_size + 1, record_size):
-                rec = parse_record(data[off:off + record_size], number,
-                                   sector_size)
+                rec = parse_record(data[off : off + record_size], number, sector_size)
                 number += 1
                 if rec is not None and rec.in_use and rec.name:
                     records.append(rec)
@@ -238,8 +244,9 @@ def assemble(records, drive_root):
     skipped so totals match what a normal directory walk would see. Orphaned or
     cyclic records (parent missing/looping) are dropped rather than trusted.
     """
-    info = {r.number: r for r in records
-            if r.in_use and r.name and r.parent is not None}
+    info = {
+        r.number: r for r in records if r.in_use and r.name and r.parent is not None
+    }
 
     path_cache = {ROOT_RECORD: drive_root}
 
@@ -250,7 +257,7 @@ def assemble(records, drive_root):
         while cur not in path_cache:
             rec = info.get(cur)
             if rec is None or rec.parent is None or cur in chain:
-                return None                      # orphan or cycle
+                return None  # orphan or cycle
             chain.append(cur)
             cur = rec.parent
         path = path_cache[cur]
@@ -264,7 +271,7 @@ def assemble(records, drive_root):
         if rec.is_dir and rec.number != ROOT_RECORD:
             dir_children[rec.parent].append(rec.number)
 
-    own = defaultdict(int)       # dir record -> bytes of files directly inside
+    own = defaultdict(int)  # dir record -> bytes of files directly inside
     ext_sizes = {}
     heap = []
     total = 0
@@ -309,8 +316,9 @@ def assemble(records, drive_root):
         if path is not None:
             top_files.append((size, path))
     top_files.sort(reverse=True)
-    top_files = top_files[:config.TOP_FILES_SHOWN]
-    top_types = sorted(ext_sizes.items(), key=lambda kv: kv[1],
-                       reverse=True)[:config.TOP_TYPES_SHOWN]
+    top_files = top_files[: config.TOP_FILES_SHOWN]
+    top_types = sorted(ext_sizes.items(), key=lambda kv: kv[1], reverse=True)[
+        : config.TOP_TYPES_SHOWN
+    ]
 
     return dir_sizes, top_files, top_types, dir_sizes.get(drive_root, total), scanned

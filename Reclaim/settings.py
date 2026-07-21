@@ -30,7 +30,7 @@ def load():
     rather than fatal — the user just gets defaults, which is always safe.
     """
     try:
-        with open(config.SETTINGS_FILE, "r", encoding="utf-8") as fh:
+        with open(config.SETTINGS_FILE, encoding="utf-8") as fh:
             data = json.load(fh)
         return data if isinstance(data, dict) else {}
     except (OSError, ValueError):
@@ -55,7 +55,7 @@ def save(data):
         os.replace(tmp, config.SETTINGS_FILE)
     except (OSError, TypeError):
         try:
-            os.remove(tmp)        # don't leave a half-written temp behind
+            os.remove(tmp)  # don't leave a half-written temp behind
         except OSError:
             pass
 
@@ -74,13 +74,13 @@ def record_cleanup(summary):
     line = f"[{ts}] {summary}\n"
     try:
         try:
-            with open(config.HISTORY_FILE, "r", encoding="utf-8") as fh:
+            with open(config.HISTORY_FILE, encoding="utf-8") as fh:
                 lines = fh.readlines()
         except OSError:
             lines = []
         lines.append(line)
         if len(lines) > config.HISTORY_MAX_LINES:
-            lines = lines[-config.HISTORY_MAX_LINES:]
+            lines = lines[-config.HISTORY_MAX_LINES :]
         with open(config.HISTORY_FILE, "w", encoding="utf-8") as fh:
             fh.writelines(lines)
     except OSError:
@@ -101,7 +101,7 @@ def history_text(limit=None):
     if limit is None:
         limit = config.HISTORY_VIEW_LINES
     try:
-        with open(config.HISTORY_FILE, "r", encoding="utf-8") as fh:
+        with open(config.HISTORY_FILE, encoding="utf-8") as fh:
             lines = fh.readlines()
         return "".join(lines[-limit:]) or "No cleanup history yet."
     except OSError:

@@ -15,12 +15,23 @@ import shutil
 import threading
 import time
 
-from PySide6.QtCore import Qt, QByteArray, QEvent, QThreadPool, QUrl, Signal
+from PySide6.QtCore import QByteArray, QEvent, Qt, QThreadPool, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QFileDialog, QFrame, QHBoxLayout, QListWidget,
-    QMainWindow, QMenu, QPlainTextEdit, QProgressBar, QPushButton,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QApplication,
+    QButtonGroup,
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QListWidget,
+    QMainWindow,
+    QMenu,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from .. import config, i18n, settings, winapi
@@ -31,7 +42,7 @@ from .widgets import GhostButton, PrimaryButton, label
 
 
 class MainWindow(QMainWindow):
-    _log_line = Signal(str)     # worker-thread-safe path into the activity log
+    _log_line = Signal(str)  # worker-thread-safe path into the activity log
 
     def __init__(self):
         super().__init__()
@@ -48,8 +59,8 @@ class MainWindow(QMainWindow):
         self.log_view.hide()
 
         self.setWindowTitle(config.APP_NAME)
-        chrome.make_frameless(self)          # our own title bar (Windows)
-        self.title_bar = None                # set in _build_ui when frameless
+        chrome.make_frameless(self)  # our own title bar (Windows)
+        self.title_bar = None  # set in _build_ui when frameless
         self._grip = None
         self.resize(*tokens.WINDOW_SIZE)
         self._restore_geometry()
@@ -71,9 +82,12 @@ class MainWindow(QMainWindow):
         self._build_controls()
         if chrome.FRAMELESS:
             self.title_bar = chrome.TitleBar(
-                self, config.APP_NAME,
+                self,
+                config.APP_NAME,
                 subtitle=t("Map your drive, then reclaim space safely."),
-                minmax=True, logo=True)
+                minmax=True,
+                logo=True,
+            )
             outer.addWidget(self.title_bar)
 
         body = QWidget()
@@ -96,8 +110,10 @@ class MainWindow(QMainWindow):
 
         self.stack = QStackedWidget()
         self.pages = [
-            pages.CleanupPage(self), pages.AnalyzerPage(self),
-            pages.DuplicatesPage(self), pages.OldFilesPage(self),
+            pages.CleanupPage(self),
+            pages.AnalyzerPage(self),
+            pages.DuplicatesPage(self),
+            pages.OldFilesPage(self),
         ]
         for p in self.pages:
             self.stack.addWidget(p)
@@ -107,7 +123,7 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(root)
         self._toast = widgets.Toast(self)
-        self._grip = chrome.add_corner_grip(self)   # frameless resize corner
+        self._grip = chrome.add_corner_grip(self)  # frameless resize corner
         self._apply_saved_inputs()
         self._nav_buttons[0].setChecked(True)
 
@@ -128,11 +144,16 @@ class MainWindow(QMainWindow):
         self.settings_btn.clicked.connect(self._open_settings)
         self.history_btn = GhostButton(t("History"))
         self.history_btn.clicked.connect(self._open_history)
-        self.log_btn = GhostButton(t("Log"))           # opens the activity-log dialog
+        self.log_btn = GhostButton(t("Log"))  # opens the activity-log dialog
         self.log_btn.clicked.connect(self._open_log)
-        self._controls = (self.theme_btn, self.lang_btn, self.settings_btn,
-                          self.history_btn, self.log_btn)
-        for w in self._controls:        # smaller footprint than the default size
+        self._controls = (
+            self.theme_btn,
+            self.lang_btn,
+            self.settings_btn,
+            self.history_btn,
+            self.log_btn,
+        )
+        for w in self._controls:  # smaller footprint than the default size
             w.setProperty("compact", "true")
         # Donation CTA — an accent button, kept out of _controls so it stays the
         # full-size primary look (not the compact ghost footer style).
@@ -149,15 +170,20 @@ class MainWindow(QMainWindow):
         if not chrome.FRAMELESS:
             # Native frame: keep the brand here (the title bar shows it otherwise).
             col.addWidget(label(config.APP_NAME, role="heading"))
-            col.addWidget(label(t("Map your drive, then reclaim space safely."),
-                                role="muted"))
+            col.addWidget(
+                label(t("Map your drive, then reclaim space safely."), role="muted")
+            )
             col.addSpacing(tokens.SP_3)
 
         self._nav_group = QButtonGroup(self)
         self._nav_group.setExclusive(True)
         self._nav_buttons = []
-        nav = [(t("Cleanup"), "fa5s.broom"), (t("Disk Analyzer"), "fa5s.chart-pie"),
-               (t("Duplicates"), "fa5s.clone"), (t("Claim old files"), "fa5s.clock")]
+        nav = [
+            (t("Cleanup"), "fa5s.broom"),
+            (t("Disk Analyzer"), "fa5s.chart-pie"),
+            (t("Duplicates"), "fa5s.clone"),
+            (t("Claim old files"), "fa5s.clock"),
+        ]
         for index, (text, glyph) in enumerate(nav):
             btn = QPushButton(text)
             btn.setObjectName("NavItem")
@@ -205,7 +231,7 @@ class MainWindow(QMainWindow):
         drow.setContentsMargins(tokens.SP_3, tokens.SP_2, tokens.SP_2, tokens.SP_2)
         self.disk_rows = QVBoxLayout()
         self.disk_rows.setContentsMargins(0, 0, 0, 0)
-        self.disk_rows.setSpacing(tokens.SP_3)      # gap between per-drive blocks
+        self.disk_rows.setSpacing(tokens.SP_3)  # gap between per-drive blocks
         drow.addLayout(self.disk_rows, 1)
         # Centre the ✕ against the (now multi-line) card rather than pinning it to
         # the top corner — it reads as the card's dismiss, not the first drive's.
@@ -262,7 +288,8 @@ class MainWindow(QMainWindow):
         self._header.setVisible(
             (not self._disk_dismissed)
             or (self._admin_card is not None and not self._admin_dismissed)
-            or self._busy)
+            or self._busy
+        )
 
     def _build_admin_warning(self):
         frame = QFrame()
@@ -270,9 +297,11 @@ class MainWindow(QMainWindow):
         row = QHBoxLayout(frame)
         row.setContentsMargins(tokens.SP_3, tokens.SP_2, tokens.SP_3, tokens.SP_2)
         admin_lbl = label(
-            t("⚠  Not admin — Update / Delivery Optimization / WER may be partly skipped."),
+            t(
+                "⚠  Not admin — Update / Delivery Optimization / WER may be partly skipped."
+            ),
         )
-        admin_lbl.setObjectName("AdminInfo")        # bold, like the disk card
+        admin_lbl.setObjectName("AdminInfo")  # bold, like the disk card
         row.addWidget(admin_lbl, 1)
         btn = GhostButton(t("Restart as admin"))
         btn.clicked.connect(winapi.relaunch_as_admin)
@@ -300,8 +329,9 @@ class MainWindow(QMainWindow):
 
     def _open_log(self):
         """Show the activity log in a themed dialog (like Settings/History)."""
-        dlg, _view, col = self._text_dialog(t("Activity log"),
-                                            self.log_view.toPlainText())
+        dlg, _view, col = self._text_dialog(
+            t("Activity log"), self.log_view.toPlainText()
+        )
         close = GhostButton(t("Close"))
         close.clicked.connect(dlg.accept)
         col.addWidget(close, 0, Qt.AlignRight)
@@ -314,14 +344,14 @@ class MainWindow(QMainWindow):
     def begin_busy(self):
         self.cancel_event.clear()
         self._busy = True
-        self.busy_label.setText(t("Working…"))   # pages refine this via set_busy_text
+        self.busy_label.setText(t("Working…"))  # pages refine this via set_busy_text
         self.spinner.start()
-        self._sync_header()              # reveal the busy row (and the header)
+        self._sync_header()  # reveal the busy row (and the header)
 
     def end_busy(self):
         self._busy = False
         self.spinner.stop()
-        self._sync_header()              # hide the busy row (and header if empty)
+        self._sync_header()  # hide the busy row (and header if empty)
 
     def set_busy_text(self, text):
         """Live one-line status shown beside the spinner (e.g. a scan count).
@@ -356,7 +386,8 @@ class MainWindow(QMainWindow):
             any_drive = True
             pct = u.used / u.total * 100 if u.total else 0
             self.disk_rows.addWidget(
-                self._disk_row(drive, human(u.free), human(u.total), pct))
+                self._disk_row(drive, human(u.free), human(u.total), pct)
+            )
         if not any_drive:
             self.disk_rows.addWidget(label(t("Disk usage unavailable"), role="muted"))
 
@@ -423,9 +454,11 @@ class MainWindow(QMainWindow):
     # -- frameless chrome housekeeping ------------------------------------- #
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if self._grip is not None:      # park the resize grip in the corner
-            self._grip.move(self.width() - self._grip.width() - 2,
-                            self.height() - self._grip.height() - 2)
+        if self._grip is not None:  # park the resize grip in the corner
+            self._grip.move(
+                self.width() - self._grip.width() - 2,
+                self.height() - self._grip.height() - 2,
+            )
             self._grip.raise_()
 
     def changeEvent(self, event):
@@ -458,13 +491,15 @@ class MainWindow(QMainWindow):
         i18n.set_language(code)
         theme.apply(QApplication.instance(), None, i18n.is_rtl())
         self.lang_btn.setText(i18n.LANGUAGES[code])
-        chrome.notify(self, t("Restart needed"),
-                      t("Restart the app to apply the new language."))
+        chrome.notify(
+            self, t("Restart needed"), t("Restart the app to apply the new language.")
+        )
 
     # -- dialogs ----------------------------------------------------------- #
     def _open_history(self):
-        dlg, view, col = self._text_dialog(t("Cleanup history"),
-                                           settings.history_text())
+        dlg, view, col = self._text_dialog(
+            t("Cleanup history"), settings.history_text()
+        )
 
         def do_clear():
             settings.clear_history()
@@ -485,12 +520,26 @@ class MainWindow(QMainWindow):
         dlg, col = chrome.frameless_dialog(self, t("Settings"))
         dlg.resize(640, 580)
         col.addWidget(label(t("Custom folders to clean"), role="heading"))
-        col.addWidget(label(t("Their contents are cleared like any cache. Added as "
-                              "the 'Custom folders' cleanup category."), role="muted"))
+        col.addWidget(
+            label(
+                t(
+                    "Their contents are cleared like any cache. Added as "
+                    "the 'Custom folders' cleanup category."
+                ),
+                role="muted",
+            )
+        )
         col.addLayout(self._list_editor("custom_clean_dirs"))
         col.addWidget(label(t("Folders to exclude from scans"), role="heading"))
-        col.addWidget(label(t("Skipped by the Disk Analyzer, Duplicates and Old-files "
-                              "scans (and everything under them)."), role="muted"))
+        col.addWidget(
+            label(
+                t(
+                    "Skipped by the Disk Analyzer, Duplicates and Old-files "
+                    "scans (and everything under them)."
+                ),
+                role="muted",
+            )
+        )
         col.addLayout(self._list_editor("excluded_dirs"))
         close = GhostButton(t("Close"))
         close.clicked.connect(dlg.accept)
@@ -564,15 +613,17 @@ class MainWindow(QMainWindow):
         self.cancel_event.set()
         self.pool.waitForDone(3000)
         _clean, analyze, dups, old = self.pages
-        self.settings.update({
-            "geometry_qt": bytes(self.saveGeometry().toHex()).decode("ascii"),
-            "theme": theme.active_theme(),
-            "language": i18n.get_language(),
-            "scan_path": analyze.drive.currentText(),
-            "dup_path": dups.path.text(),
-            "old_path": old.path.text(),
-            "old_months": str(old.months.value()),
-            "dup_min_mb": str(dups.min_mb.value()),
-        })
+        self.settings.update(
+            {
+                "geometry_qt": bytes(self.saveGeometry().toHex()).decode("ascii"),
+                "theme": theme.active_theme(),
+                "language": i18n.get_language(),
+                "scan_path": analyze.drive.currentText(),
+                "dup_path": dups.path.text(),
+                "old_path": old.path.text(),
+                "old_months": str(old.months.value()),
+                "dup_min_mb": str(dups.min_mb.value()),
+            }
+        )
         settings.save(self.settings)
         super().closeEvent(event)

@@ -15,9 +15,7 @@ from . import config, fsutils, mft, winapi
 
 # What a scan produces. A small named record beats returning a 5-tuple that
 # callers have to remember the order of.
-ScanResult = namedtuple(
-    "ScanResult", "dir_sizes top_files top_types total scanned"
-)
+ScanResult = namedtuple("ScanResult", "dir_sizes top_files top_types total scanned")
 
 # One set of byte-identical files. `size` is the size of a single copy; the
 # space wasted by the group is size * (len(paths) - 1), since one copy is the
@@ -42,10 +40,14 @@ def _try_mft_size_map(base, on_progress, should_cancel):
         return None
     try:
         records = mft.scan(
-            volume["read"], volume["bytes_per_cluster"], volume["record_size"],
-            volume["mft_start_lcn"], on_progress=on_progress,
+            volume["read"],
+            volume["bytes_per_cluster"],
+            volume["record_size"],
+            volume["mft_start_lcn"],
+            on_progress=on_progress,
             should_cancel=should_cancel,
-            sector_size=volume["bytes_per_sector"])
+            sector_size=volume["bytes_per_sector"],
+        )
     except fsutils.Cancelled:
         raise
     except Exception:
@@ -58,7 +60,8 @@ def _try_mft_size_map(base, on_progress, should_cancel):
     if not records:
         return None
     dir_sizes, top_files, top_types, total, scanned = mft.assemble(
-        records, drive + "\\")
+        records, drive + "\\"
+    )
     if scanned == 0:
         return None
     return ScanResult(dir_sizes, top_files, top_types, total, scanned)
@@ -93,11 +96,11 @@ def build_size_map(base, on_progress=None, should_cancel=None, excluded=None):
             return fast
 
     normed = fsutils.normalize_excludes(excluded)
-    own_size = {}        # dir -> bytes of files directly inside it
-    children = {}        # dir -> [child dir paths]
-    order = []           # dirs in discovery order (every parent before its kids)
-    heap = []            # bounded min-heap of the largest files: (size, path)
-    ext_sizes = {}       # extension -> total bytes
+    own_size = {}  # dir -> bytes of files directly inside it
+    children = {}  # dir -> [child dir paths]
+    order = []  # dirs in discovery order (every parent before its kids)
+    heap = []  # bounded min-heap of the largest files: (size, path)
+    ext_sizes = {}  # extension -> total bytes
     scanned = 0
     last = time.time()
 
@@ -154,11 +157,11 @@ def build_size_map(base, on_progress=None, should_cancel=None, excluded=None):
             total += dir_sizes.get(child, 0)
         dir_sizes[path] = total
 
-    top_files = sorted(heap, reverse=True)[:config.TOP_FILES_SHOWN]
-    top_types = sorted(ext_sizes.items(), key=lambda kv: kv[1],
-                       reverse=True)[:config.TOP_TYPES_SHOWN]
-    return ScanResult(dir_sizes, top_files, top_types,
-                      dir_sizes.get(base, 0), scanned)
+    top_files = sorted(heap, reverse=True)[: config.TOP_FILES_SHOWN]
+    top_types = sorted(ext_sizes.items(), key=lambda kv: kv[1], reverse=True)[
+        : config.TOP_TYPES_SHOWN
+    ]
+    return ScanResult(dir_sizes, top_files, top_types, dir_sizes.get(base, 0), scanned)
 
 
 def _hash_file(path, limit=None):
@@ -216,8 +219,9 @@ def _collapse_hardlinks(paths):
     return out
 
 
-def find_duplicates(base, min_size=None, on_progress=None,
-                    should_cancel=None, excluded=None):
+def find_duplicates(
+    base, min_size=None, on_progress=None, should_cancel=None, excluded=None
+):
     """Find groups of byte-identical files at or above `min_size`, costliest first.
 
     A three-stage funnel keeps the work cheap: most files are unique, so we want
@@ -246,8 +250,9 @@ def find_duplicates(base, min_size=None, on_progress=None,
     scanned = 0
     last = time.time()
     # Shared fast walker: scandir-based, reparse-safe, cancel/exclude aware.
-    for fp, st in fsutils.iter_files(base, should_cancel=should_cancel,
-                                     excluded=excluded):
+    for fp, st in fsutils.iter_files(
+        base, should_cancel=should_cancel, excluded=excluded
+    ):
         if st.st_size < min_size:
             continue
         by_size.setdefault(st.st_size, []).append(fp)

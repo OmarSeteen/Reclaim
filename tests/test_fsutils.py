@@ -15,7 +15,7 @@ class TestFormatting(unittest.TestCase):
     def test_human_units(self):
         self.assertEqual(fsutils.human(0), "0.0 B")
         self.assertEqual(fsutils.human(1536), "1.5 KB")
-        self.assertEqual(fsutils.human(5 * 1024 ** 3), "5.0 GB")
+        self.assertEqual(fsutils.human(5 * 1024**3), "5.0 GB")
 
     def test_months_old(self):
         day = 86400
@@ -34,7 +34,7 @@ class TestSizing(unittest.TestCase):
             with open(os.path.join(self.base, f"f{i}.bin"), "wb") as fh:
                 fh.write(b"x" * 1024 * 100)  # 100 KB each
         with open(os.path.join(self.base, "sub", "big.bin"), "wb") as fh:
-            fh.write(b"y" * 1024 * 500)      # 500 KB
+            fh.write(b"y" * 1024 * 500)  # 500 KB
 
     def test_dir_size_and_count(self):
         self.assertEqual(fsutils.dir_size(self.base), (3 * 100 + 500) * 1024)
@@ -43,8 +43,8 @@ class TestSizing(unittest.TestCase):
     def test_clean_keeps_root_but_empties_it(self):
         freed = fsutils.clean_dir_contents(self.base, lambda m: None)
         self.assertEqual(freed, (3 * 100 + 500) * 1024)
-        self.assertTrue(os.path.isdir(self.base))      # folder preserved
-        self.assertEqual(os.listdir(self.base), [])    # contents gone
+        self.assertTrue(os.path.isdir(self.base))  # folder preserved
+        self.assertEqual(os.listdir(self.base), [])  # contents gone
 
 
 class TestOldFiles(unittest.TestCase):
@@ -102,14 +102,13 @@ class TestMoveFiles(unittest.TestCase):
         a = self._make("a.bin", b"x" * 1000)
         moved, freed = fsutils.move_files([a], self.dest, base_dir=self.src)
         self.assertEqual((moved, freed), (1, 1000))
-        self.assertFalse(os.path.exists(a))                      # source gone
+        self.assertFalse(os.path.exists(a))  # source gone
         self.assertTrue(os.path.isfile(os.path.join(self.dest, "a.bin")))
 
     def test_preserves_relative_structure(self):
         nested = self._make(os.path.join("sub", "deep", "f.txt"), b"hi")
         fsutils.move_files([nested], self.dest, base_dir=self.src)
-        self.assertTrue(os.path.isfile(
-            os.path.join(self.dest, "sub", "deep", "f.txt")))
+        self.assertTrue(os.path.isfile(os.path.join(self.dest, "sub", "deep", "f.txt")))
 
     def test_collision_does_not_overwrite(self):
         # A file already at the destination with the same name must survive.
@@ -119,12 +118,13 @@ class TestMoveFiles(unittest.TestCase):
         src = self._make("dup.txt", b"NEW")
         fsutils.move_files([src], self.dest, base_dir=self.src)
         with open(existing, "rb") as fh:
-            self.assertEqual(fh.read(), b"ORIGINAL")             # untouched
+            self.assertEqual(fh.read(), b"ORIGINAL")  # untouched
         self.assertTrue(os.path.isfile(os.path.join(self.dest, "dup (1).txt")))
 
     def test_missing_source_is_skipped(self):
         moved, freed = fsutils.move_files(
-            [os.path.join(self.src, "ghost.bin")], self.dest)
+            [os.path.join(self.src, "ghost.bin")], self.dest
+        )
         self.assertEqual((moved, freed), (0, 0))
 
 
@@ -132,8 +132,11 @@ class TestIterFiles(unittest.TestCase):
     def setUp(self):
         self.base = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.base, "a", "b"))
-        for rel in ("top.txt", os.path.join("a", "m.txt"),
-                    os.path.join("a", "b", "deep.txt")):
+        for rel in (
+            "top.txt",
+            os.path.join("a", "m.txt"),
+            os.path.join("a", "b", "deep.txt"),
+        ):
             with open(os.path.join(self.base, rel), "wb") as fh:
                 fh.write(b"x" * 10)
 
@@ -150,8 +153,9 @@ class TestIterFiles(unittest.TestCase):
     def test_cancel_and_exclude(self):
         with self.assertRaises(fsutils.Cancelled):
             list(fsutils.iter_files(self.base, should_cancel=lambda: True))
-        kept = dict(fsutils.iter_files(
-            self.base, excluded=[os.path.join(self.base, "a")]))
+        kept = dict(
+            fsutils.iter_files(self.base, excluded=[os.path.join(self.base, "a")])
+        )
         self.assertEqual(list(kept), [os.path.join(self.base, "top.txt")])
 
     def test_is_reparse_dir_false_for_plain_dir(self):
@@ -166,7 +170,8 @@ class TestExcludeHelpers(unittest.TestCase):
         normed = fsutils.normalize_excludes([os.path.join("C:", "cache")])
         self.assertTrue(fsutils.is_excluded(os.path.join("C:", "cache"), normed))
         self.assertTrue(
-            fsutils.is_excluded(os.path.join("C:", "cache", "deep", "f"), normed))
+            fsutils.is_excluded(os.path.join("C:", "cache", "deep", "f"), normed)
+        )
         self.assertFalse(fsutils.is_excluded(os.path.join("C:", "cacheother"), normed))
         self.assertFalse(fsutils.is_excluded(os.path.join("C:", "other"), normed))
 

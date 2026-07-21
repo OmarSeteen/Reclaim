@@ -56,7 +56,10 @@ def _qss(palette, rtl):
         fs_display=tokens.FS_DISPLAY,
         fs_caption=tokens.FS_CAPTION,
         fs_mono=tokens.FS_MONO,
-        sp1=tokens.SP_1, sp2=tokens.SP_2, sp3=tokens.SP_3, sp4=tokens.SP_4,
+        sp1=tokens.SP_1,
+        sp2=tokens.SP_2,
+        sp3=tokens.SP_3,
+        sp4=tokens.SP_4,
         sp6=tokens.SP_6,
     )
     return Template(_QSS_TEMPLATE).safe_substitute(v)
