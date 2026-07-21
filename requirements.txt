@@ -1,5 +1,5 @@
 # Runtime dependency for the PySide6 desktop UI.
-PySide6>=6.6
+PySide6==6.11.1
 
 # Optional: vector icons. The UI guards the import and degrades to text/no-icon
 # if it's missing, so this is not required to run.

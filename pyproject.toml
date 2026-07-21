@@ -1,0 +1,14 @@
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+# E501 (line too long) is redundant with black on code, and noisy on the long
+# QSS strings in ui/theme.py and the Arabic translation table in i18n.py that
+# can't be wrapped without breaking the literal.
+ignore = ["E501"]
