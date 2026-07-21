@@ -25,6 +25,9 @@ Thumbs.db
 
 # Scratch files used during development checks
 _*.py
+# ...but not legitimate underscore-prefixed modules the app/tests ship with.
+!Reclaim/__main__.py
+!tests/_support.py
 
 # Internal dev notes not meant for the public repo
 # (history.md = chronological build log; CLAUDE.md = AI-agent working instructions)
