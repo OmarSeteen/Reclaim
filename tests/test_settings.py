@@ -4,9 +4,10 @@ We redirect the module's file paths (config attributes, read at call time) into 
 temp dir so the real per-user settings are never touched.
 """
 
-import os
 import tempfile
 import unittest
+
+from _support import redirect_app_data
 
 from Reclaim import config, settings
 
@@ -14,15 +15,13 @@ from Reclaim import config, settings
 class TestSettings(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self._saved = (config.APP_DATA_DIR, config.SETTINGS_FILE,
-                       config.HISTORY_FILE, config.HISTORY_MAX_LINES)
-        config.APP_DATA_DIR = self.tmp
-        config.SETTINGS_FILE = os.path.join(self.tmp, "settings.json")
-        config.HISTORY_FILE = os.path.join(self.tmp, "history.log")
+        cm = redirect_app_data(self.tmp)
+        cm.__enter__()
+        self.addCleanup(cm.__exit__, None, None, None)
+        self._saved_history_max_lines = config.HISTORY_MAX_LINES
 
     def tearDown(self):
-        (config.APP_DATA_DIR, config.SETTINGS_FILE,
-         config.HISTORY_FILE, config.HISTORY_MAX_LINES) = self._saved
+        config.HISTORY_MAX_LINES = self._saved_history_max_lines
 
     def test_load_defaults_to_empty_when_absent(self):
         self.assertEqual(settings.load(), {})
@@ -54,10 +53,10 @@ class TestSettings(unittest.TestCase):
         config.HISTORY_MAX_LINES = 5
         for i in range(20):
             settings.record_cleanup(f"run {i}")
-        with open(config.HISTORY_FILE, "r", encoding="utf-8") as fh:
+        with open(config.HISTORY_FILE, encoding="utf-8") as fh:
             lines = fh.readlines()
-        self.assertEqual(len(lines), 5)            # bounded
-        self.assertIn("run 19", lines[-1])         # newest kept
+        self.assertEqual(len(lines), 5)  # bounded
+        self.assertIn("run 19", lines[-1])  # newest kept
         self.assertNotIn("run 0", "".join(lines))  # oldest dropped
 
 
