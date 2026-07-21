@@ -5,8 +5,53 @@ logic lives in the modules below it.
 
 import os
 import sys
+import traceback
 
 from . import config, i18n, settings
+
+
+def _write_crash_log(exc_type, exc_value, exc_tb):
+    """Append the traceback to APP_DATA_DIR/crash.log. Returns the log path,
+    or None if it couldn't be written — never raises, since a broken crash
+    logger must not swallow the actual crash.
+    """
+    text = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    path = os.path.join(config.APP_DATA_DIR, "crash.log")
+    try:
+        os.makedirs(config.APP_DATA_DIR, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(text + "\n")
+        return path
+    except OSError:
+        return None
+
+
+def _install_crash_handler():
+    """Catch anything that reaches the top of the event loop uncaught: log it,
+    tell the user (best-effort — a dialog that itself fails must not hide the
+    crash), then still chain to the default hook so the traceback reaches the
+    console/debugger like normal. Without this, an unhandled exception in a
+    --windowed build (no console) just kills the app with nothing to show for it.
+    """
+
+    def handle(exc_type, exc_value, exc_tb):
+        path = _write_crash_log(exc_type, exc_value, exc_tb)
+        try:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.critical(
+                None,
+                i18n.t("Reclaim crashed"),
+                i18n.t(
+                    "Something went wrong and Reclaim needs to close.\n\n"
+                    "Details were saved to:\n{path}"
+                ).format(path=path or i18n.t("(couldn't write a crash log)")),
+            )
+        except Exception:
+            pass
+        sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+    sys.excepthook = handle
 
 
 def main():
@@ -15,6 +60,7 @@ def main():
     from .ui import theme, widgets
     from .ui.shell import MainWindow
 
+    _install_crash_handler()
     app = QApplication(sys.argv)
     app.setApplicationName(config.APP_NAME)
 
