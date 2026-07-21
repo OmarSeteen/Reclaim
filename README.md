@@ -12,7 +12,7 @@ duplicate and forgotten files. You never lose anything by accident.
 [![CI](https://github.com/OmarSeteen/Reclaim/actions/workflows/ci.yml/badge.svg)](https://github.com/OmarSeteen/Reclaim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-blue)
-![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 
 [**Download**](#download) · [Features](#features) · [Is it safe?](#is-the-download-safe) · [Security & testing](#security--testing) · [Build from source](#build-it-yourself) · [Support](#support-the-project)
 
@@ -144,7 +144,7 @@ traceback to `%LOCALAPPDATA%\Reclaim\crash.log` and shows a plain-language
 dialog instead of the app just dying silently.
 
 CI runs on every push and pull request: a ruff + black lint/format gate, the
-full test suite on Python 3.9, 3.11, and 3.12, and a headless GUI smoke test,
+full test suite on Python 3.10, 3.11, 3.12, and 3.13, and a headless GUI smoke test,
 all on real Windows runners (the app's Windows-specific code can't be
 verified any other way). Both the CI and release workflows pin every GitHub
 Action to a commit SHA, not a mutable tag, and Dependabot keeps the Python
@@ -152,7 +152,7 @@ and Action pins current.
 
 ## Run from source
 
-Requires Python 3.9+ and PySide6 (the only runtime dependency):
+Requires Python 3.10+ and PySide6 (the only runtime dependency):
 
 ```bash
 pip install -r requirements.txt

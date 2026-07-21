@@ -6,14 +6,14 @@ architecture by design, so some context up front makes contributing easier.
 ## Getting set up
 
 ```bash
-git clone https://github.com/OmarSeteen/Reclaim-App.git
-cd Reclaim-App
+git clone https://github.com/OmarSeteen/Reclaim.git
+cd Reclaim
 pip install -r requirements.txt
 python -m Reclaim            # launch the app
 python -m unittest discover -s tests -v
 ```
 
-Python 3.9+ is required. PySide6 is the only runtime dependency.
+Python 3.10+ is required. PySide6 is the only runtime dependency.
 
 ## The one rule that matters: the safety invariant
 
