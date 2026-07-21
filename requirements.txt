@@ -1,5 +1,7 @@
 # Runtime dependency for the PySide6 desktop UI.
-PySide6==6.11.1
+# Pinned to the last release supporting Python 3.9 (our floor): 6.11+ requires
+# Python >=3.10.
+PySide6==6.10.3
 
 # Optional: vector icons. The UI guards the import and degrades to text/no-icon
 # if it's missing, so this is not required to run.

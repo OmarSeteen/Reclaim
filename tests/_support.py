@@ -22,7 +22,7 @@ def redirect_app_data(tmp_dir):
     try:
         yield
     finally:
-        (config.APP_DATA_DIR, config.SETTINGS_FILE, config.HISTORY_FILE) = saved
+        config.APP_DATA_DIR, config.SETTINGS_FILE, config.HISTORY_FILE = saved
 
 
 def pump_until(app, predicate, timeout=5):

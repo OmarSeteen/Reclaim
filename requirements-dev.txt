@@ -1,3 +1,5 @@
 # Lint/format tooling, kept separate from runtime deps (requirements.txt).
-black==26.5.1
+# black pinned to the last release supporting Python 3.9 (our floor): 26.x
+# requires Python >=3.10.
+black==25.9.0
 ruff==0.15.18
