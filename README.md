@@ -9,12 +9,12 @@
 See what's eating your drive, reclaim space from caches and temp files, and find
 duplicate and forgotten files. You never lose anything by accident.
 
-[![CI](https://github.com/OmarSeteen/Reclaim-App/actions/workflows/ci.yml/badge.svg)](https://github.com/OmarSeteen/Reclaim-App/actions/workflows/ci.yml)
+[![CI](https://github.com/OmarSeteen/Reclaim/actions/workflows/ci.yml/badge.svg)](https://github.com/OmarSeteen/Reclaim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-blue)
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 
-[**Download**](#download) · [Features](#features) · [Is it safe?](#is-the-download-safe) · [Build from source](#build-it-yourself) · [Support](#support-the-project)
+[**Download**](#download) · [Features](#features) · [Is it safe?](#is-the-download-safe) · [Security & testing](#security--testing) · [Build from source](#build-it-yourself) · [Support](#support-the-project)
 
 </div>
 
@@ -91,7 +91,7 @@ with a right-to-left layout):
 
 ## Download
 
-**[➡️ Get the latest release](https://github.com/OmarSeteen/Reclaim-App/releases/latest)**
+**[➡️ Get the latest release](https://github.com/OmarSeteen/Reclaim/releases/latest)**
 
 Download `Reclaim-vX.Y.Z-windows.zip`, unzip it anywhere, and run `Reclaim.exe`.
 No installation, no Python needed.
@@ -116,6 +116,40 @@ You can verify it yourself:
 
 To run anyway: click **More info → Run anyway**.
 
+## Security & testing
+
+The safety invariant above is enforced by structure, not convention: deletion
+code can only touch paths returned by [`locations.py`](Reclaim/locations.py),
+a short, auditable allowlist, and personal files always go through the
+Recycle Bin or a copy-then-delete move, never a hard delete.
+
+That invariant is backed by 106 unit and integration tests, including:
+
+- **The allowlist itself.** Every cache/temp resolver in `locations.py` is
+  checked to return only paths that actually exist, and a dedicated test
+  proves a wildcard in a user-added custom folder can't fan out across the
+  drive.
+- **The real click-to-delete flow.** Tests drive the actual PySide6
+  `MainWindow`: click "Clean selected" and "Move to Recycle Bin", scan a
+  drive into the treemap, toggle theme/language, edit the custom/excluded
+  folder lists, and check the real result (file gone, or on decline,
+  untouched) instead of only checking a button exists.
+- **The Windows shell boundary** (`winapi.py`, the one module allowed to
+  touch the shell). Destructive operations (emptying the Recycle Bin,
+  removing `Windows.old`) are only exercised through their no-op guards;
+  recycling a file is tested for real, since it's undoable by design.
+
+If something still gets past all that, a top-level crash handler logs the
+traceback to `%LOCALAPPDATA%\Reclaim\crash.log` and shows a plain-language
+dialog instead of the app just dying silently.
+
+CI runs on every push and pull request: a ruff + black lint/format gate, the
+full test suite on Python 3.9, 3.11, and 3.12, and a headless GUI smoke test,
+all on real Windows runners (the app's Windows-specific code can't be
+verified any other way). Both the CI and release workflows pin every GitHub
+Action to a commit SHA, not a mutable tag, and Dependabot keeps the Python
+and Action pins current.
+
 ## Run from source
 
 Requires Python 3.9+ and PySide6 (the only runtime dependency):
@@ -138,7 +172,7 @@ on a crash, the wrong default for a tool that exists to *prevent* that.
 
 ## Run the tests
 
-No network and no secrets required:
+106 tests, no network and no secrets required (see [Security & testing](#security--testing)):
 
 ```bash
 python -m unittest discover -s tests -v
@@ -154,8 +188,7 @@ deletion logic headlessly testable.
 ui/ + gui  →  cleaners / analyzer / treemap  →  locations / fsutils / winapi / settings / mft / i18n  →  config
 ```
 
-Full architecture notes, the module map, and the contribution rules live in
-[`CLAUDE.md`](CLAUDE.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Contribution rules live in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Support the project
 
